@@ -44,7 +44,7 @@
 
 #define	I2C_FLASHTIME				1000				//1S
 #define GPIO_FLASHTIME			500				//500mS
-void        timeUpdate(void);
+void        timeUpdate(uint8_t byte);
 void 		S800_Clock_Init(void);
 void 		S800_GPIO_Init(void);
 void		S800_I2C0_Init(void);
@@ -67,7 +67,7 @@ volatile uint8_t month=0,day=0;    //从左到右分别代表月份、日期
 volatile uint8_t setHour=0,setMinute=0,setSecond=0;	//从左到右分别代表设置闹钟的时钟、分钟、秒钟
 volatile uint8_t hour=12, minute=0, second=0;	//从左到右分别代表时钟、分钟、秒钟
 volatile uint8_t carryFlag1 = 0, carryFlag2 = 0,carryFlag3=0,carryFlag4=0; //判断低位加1后相邻高位是否需要加1的标志
-volatile uint8_t daysOfMonth[12] = {31,28,31,30,31,30,31,31,30,31,30,31}; //每月的天数
+volatile uint8_t daysOfMonth[12] = {32,29,32,31,32,31,32,32,31,32,31,32}; //每月的天数
 volatile uint8_t clockFlag = 0;    //闹钟响应标志
 
 volatile uint8_t uart_receive_status = 0;
@@ -75,7 +75,7 @@ char uart_receive_char[10];
 
 int main(void)
 {
-	volatile uint8_t result,commandIndex;
+	volatile uint8_t commandIndex;
 	volatile uint16_t	i2c_flash_cnt_s=0;
 	
     
@@ -136,40 +136,6 @@ int main(void)
                 sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
                 UARTStringPut(time_char);
             }
-            else if(strcmp(command_char, "INC") == 0)
-            {	
-                //秒钟
-                if((second+atoi(second_char)) >= 60)
-                    carryFlag1 = 1;
-                second = (second + atoi(second_char)) % 60;
-                //分钟
-                if(carryFlag1 == 1)
-                {	
-                    if((minute+atoi(minute_char)+1) >= 60)
-                        carryFlag2 = 1;
-                    minute = (minute+atoi(minute_char)+1) % 60;
-                    carryFlag1 = 0;	//进位标志归零	
-                }		
-                else
-                {
-                    if((minute+atoi(minute_char)) >= 60)
-                        carryFlag2 = 1;
-                    minute = (minute+atoi(minute_char)) % 60;				
-                }	
-                //时钟
-                if(carryFlag2 == 1)
-                {	
-                    hour = (hour+atoi(hour_char)+1) % 60;
-                    carryFlag2 = 0;	//进位标志归零	
-                }				
-                else
-                {
-                    hour = (hour+atoi(hour_char)) % 60;			
-                }		
-
-                sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
-                UARTStringPut(time_char);				
-            }
             else if(strcmp(command_char, "GETTIME") == 0)
             {
                 sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
@@ -196,53 +162,29 @@ int main(void)
                     i2c_flash_cnt_s	= 0;
                     
                     //每过1s，秒钟加1
-                    timeUpdate();
+                    timeUpdate(0);
                 }
             }
-            
-            
-            
             //数码管显示”分钟-秒钟”
             //显示时钟
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[hour/10]);	//write port 1				
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<0);			//write port 2
-            SysCtlDelay(ui32SysClock/1500); //延时2ms
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[hour%10]);	//write port 1				
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<1);			//write port 2
-            SysCtlDelay(ui32SysClock/1500); //延时2ms
-            //显示”-”
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1				
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<2);			//write port 2
-            SysCtlDelay(ui32SysClock/1500); //延时2ms	
-            //显示分钟
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[minute/10]);	//write port 1				
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<3);			//write port 2
-            SysCtlDelay(ui32SysClock/1500); //延时2ms
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[minute%10]);	//write port 1				
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<4);			//write port 2
-            SysCtlDelay(ui32SysClock/1500); //延时2ms
-            //显示”-”
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1			
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<5);			//write port 2
-            SysCtlDelay(ui32SysClock/1500); //延时2ms
-            //显示秒钟
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[second/10]);	//write port 1				
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<6);			//write port 2
-            SysCtlDelay(ui32SysClock/1500); //延时2ms
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[second%10]);	//write port 1				
-            result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<7);			//write port 2
-            SysCtlDelay(ui32SysClock/1500); //延时2ms
+            showTime();
             break;
         case 1://显示日期
-            
+        // 要照常更新时间，否则会出错
+            if (systick_100ms_status) //100ms定时到
+            {
+                systick_100ms_status	= 0; //重置100ms定时状态
+                
+                if (++i2c_flash_cnt_s >= I2C_FLASHTIME/100)  //10*100ms=1s
+                {
+                    i2c_flash_cnt_s	= 0;
+                    
+                    //每过1s，秒钟加1
+                    timeUpdate(0);
+                }
+            }
+            //显示日期
+            showDate();
             break;
         default:
             break;
@@ -252,46 +194,166 @@ int main(void)
 	}//end while
 }
 
-void timeUpdate(void){
-    // 时间更新函数
+void timeUpdate(uint8_t byte){
+    /*时间更新函数，
+    byte=0:inc second
+    byte=1:inc min
+    byte=2:inc hour
+    3:inc day
+    4:inc month*/
     
     //每过1s，秒钟加1
     //秒钟
-    if((second+1) == 60)
+    switch (byte)
     {
-        carryFlag1 = 1;
-    }
-    second = (second+1) % 60;	//秒钟加1
-    //分钟
-    if(carryFlag1 == 1)
-    {	
+    case 0:
+        if((second+1) == 60)
+        {
+            carryFlag1 = 1;
+        }
+        second = (second+1) % 60;	//秒钟加1
+        //分钟
+        if(carryFlag1 == 1)
+        {	
+            if((minute+1) == 60)
+                carryFlag2 = 1;
+            minute = (minute+1) % 60;	//分钟加1
+            carryFlag1 = 0;	//进位标志归零	
+        }
+        
+        break;
+    case 1:
         if((minute+1) == 60)
+        {
             carryFlag2 = 1;
-        minute = (minute+1) % 60;	//分钟加1
-        carryFlag1 = 0;	//进位标志归零	
-    }
-    //时钟
-    if(carryFlag2 == 1)
-    {	
-        if((hour+1)==24){
-            carryFlag3=1;
         }
-        hour = (hour+1) % 60;	//分钟个位加1
-        carryFlag2 = 0;	//进位标志归零
-    }
-    // 日期进位
-    if(carryFlag3==1){
-        if((day+1)==daysOfMonth[month]){
-            carryFlag4=1;
+        //时钟
+        if(carryFlag2 == 1)
+        {	
+            if((hour+1)==24){
+                carryFlag3=1;
+            }
+            hour = (hour+1) % 60;	//分钟个位加1
+            carryFlag2 = 0;	//进位标志归零
         }
-        day=(day+1)%daysOfMonth[month];
-        carryFlag3=0;
+        // 日期进位
+        if(carryFlag3==1){
+            if((day+1)==daysOfMonth[month]){
+                carryFlag4=1;
+            }
+            day=(day+1)%daysOfMonth[month];
+            carryFlag3=0;
+        }
+        // 月份进位
+        if(carryFlag4==1){
+            month=(month+1)%13;
+            carryFlag4=0;
+        }
+        break;
+    case 2:
+        if((hour+1) == 24)
+        {
+            carryFlag3 = 1;
+        }
+        // 日期进位
+        if(carryFlag3==1){
+            if((day+1)==daysOfMonth[month]){
+                carryFlag4=1;
+            }
+            day=(day+1)%daysOfMonth[month];
+            carryFlag3=0;
+        }
+        // 月份进位
+        if(carryFlag4==1){
+            month=(month+1)%13;
+            carryFlag4=0;
+        }
+        break;
+    case 3:
+        if((day+1) == month[daysOfMonth]])
+        {
+            carryFlag3 = 1;
+        }
+        // 月份进位
+        if(carryFlag4==1){
+            month=(month+1)%13;
+            carryFlag4=0;
+        }
+        break;
+    case 4:
+        month = (month+1)%12;
+        break;
+    default:
+        break;
     }
-    // 月份进位
-    if(carryFlag4==1){
-        month=(month+1)%13;
-        carryFlag4=0;
-    }
+    
+}
+void showTime(void){
+    //显示时间
+    uint8_t result;
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[hour/10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<0);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[hour%10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<1);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    //显示”-”
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<2);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms	
+    //显示分钟
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[minute/10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<3);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[minute%10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<4);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    //显示”-”
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1			
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<5);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    //显示秒钟
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[second/10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<6);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[second%10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<7);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
+}
+
+void showDate(void){
+    uint8_t result;
+    //显示月份
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[(month+1)/10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<3);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[(1+month)%10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<4);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    //显示”-”
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1			
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<5);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    //显示日期
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[(1+day)/10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<6);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[(1+day)%10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<7);			//write port 2
+    SysCtlDelay(ui32SysClock/1500); //延时2ms
 }
 
 //------------- System Clock -------------------
@@ -458,38 +520,28 @@ void SysTick_Handler(void)
         clockFlag = 0;
     }
     else if(SW&16){
+        // 调最右边的LED
         if(functionChoice==0){
-            second++;
-            //每过1s，秒钟加1
-            //秒钟
-            if((second+1) == 60)
-            {
-                carryFlag1 = 1;
-            }
-            second = (second+1) % 60;	//秒钟加1
-            //分钟
-            if(carryFlag1 == 1)
-            {	
-                if((minute+1) == 60)
-                    carryFlag2 = 1;
-                minute = (minute+1) % 60;	//分钟加1
-                carryFlag1 = 0;	//进位标志归零	
-            }
-            //时钟
-            if(carryFlag2 == 1)
-            {	
-                hour = (hour+1) % 60;	//分钟个位加1
-                carryFlag2 = 0;	//进位标志归零	
-            }
+            timeUpdate(0);
         }
         if(functionChoice==1){
-            
+            timeUpdate(3)
         }
     }
     else if(SW&32){
-
+        // 调中间的LED
+        if(functionChoice==0){
+            timeUpdate(1);
+        }
+        if(functionChoice==1){
+            timeUpdate(4)
+        }
     }
-
+    else if(SW&64){
+        if(functionChoice==0){
+            timeUpdate(2);
+        }
+    }
 }
 
 //----------- UART ---------------------
