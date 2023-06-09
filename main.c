@@ -44,7 +44,7 @@
 
 #define	I2C_FLASHTIME				1000				//1S
 #define GPIO_FLASHTIME			500				//500mS
-
+void        timeUpdate(void);
 void 		S800_Clock_Init(void);
 void 		S800_GPIO_Init(void);
 void		S800_I2C0_Init(void);
@@ -63,6 +63,12 @@ uint8_t seg7[] = {0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f,0x77,0x7c,0x
 volatile uint16_t systick_10ms_couter=0, systick_100ms_couter=0; //10ms和100ms计时器
 volatile uint8_t	systick_10ms_status=0, systick_100ms_status=0; //10ms和100ms计时状态
 volatile uint8_t functionChoice = 0;	//功能选择标志
+volatile uint8_t month=0,day=0;    //从左到右分别代表月份、日期
+volatile uint8_t setHour=0,setMinute=0,setSecond=0;	//从左到右分别代表设置闹钟的时钟、分钟、秒钟
+volatile uint8_t hour=12, minute=0, second=0;	//从左到右分别代表时钟、分钟、秒钟
+volatile uint8_t carryFlag1 = 0, carryFlag2 = 0,carryFlag3=0,carryFlag4=0; //判断低位加1后相邻高位是否需要加1的标志
+volatile uint8_t daysOfMonth[12] = {31,28,31,30,31,30,31,31,30,31,30,31}; //每月的天数
+volatile uint8_t clockFlag = 0;    //闹钟响应标志
 
 volatile uint8_t uart_receive_status = 0;
 char uart_receive_char[10];
@@ -71,11 +77,11 @@ int main(void)
 {
 	volatile uint8_t result,commandIndex;
 	volatile uint16_t	i2c_flash_cnt_s=0;
-	volatile uint8_t hour=12, minute=0, second=0;	//从左到右分别代表时钟、分钟、秒钟
-    volatile uint8_t month=0,day=0;    //从左到右分别代表月份、日期
+	
+    
     char month_char[12][4] = {"JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
     char num_char[12][3] = {"00","01","02","03","04","05","06","07","08","09","10","11"};  
-	volatile uint8_t carryFlag1 = 0, carryFlag2 = 0; //判断低位加1后相邻高位是否需要加1的标志
+	
 	
 	char time_char[10];
 	
@@ -190,26 +196,7 @@ int main(void)
                     i2c_flash_cnt_s	= 0;
                     
                     //每过1s，秒钟加1
-                    //秒钟
-                    if((second+1) == 60)
-                    {
-                        carryFlag1 = 1;
-                    }
-                    second = (second+1) % 60;	//秒钟加1
-                    //分钟
-                    if(carryFlag1 == 1)
-                    {	
-                        if((minute+1) == 60)
-                            carryFlag2 = 1;
-                        minute = (minute+1) % 60;	//分钟加1
-                        carryFlag1 = 0;	//进位标志归零	
-                    }
-                    //时钟
-                    if(carryFlag2 == 1)
-                    {	
-                        hour = (hour+1) % 60;	//分钟个位加1
-                        carryFlag2 = 0;	//进位标志归零	
-                    }	
+                    timeUpdate();
                 }
             }
             
@@ -263,6 +250,48 @@ int main(void)
 
 		
 	}//end while
+}
+
+void timeUpdate(void){
+    // 时间更新函数
+    
+    //每过1s，秒钟加1
+    //秒钟
+    if((second+1) == 60)
+    {
+        carryFlag1 = 1;
+    }
+    second = (second+1) % 60;	//秒钟加1
+    //分钟
+    if(carryFlag1 == 1)
+    {	
+        if((minute+1) == 60)
+            carryFlag2 = 1;
+        minute = (minute+1) % 60;	//分钟加1
+        carryFlag1 = 0;	//进位标志归零	
+    }
+    //时钟
+    if(carryFlag2 == 1)
+    {	
+        if((hour+1)==24){
+            carryFlag3=1;
+        }
+        hour = (hour+1) % 60;	//分钟个位加1
+        carryFlag2 = 0;	//进位标志归零
+    }
+    // 日期进位
+    if(carryFlag3==1){
+        if((day+1)==daysOfMonth[month]){
+            carryFlag4=1;
+        }
+        day=(day+1)%daysOfMonth[month];
+        carryFlag3=0;
+    }
+    // 月份进位
+    if(carryFlag4==1){
+        month=(month+1)%13;
+        carryFlag4=0;
+    }
 }
 
 //------------- System Clock -------------------
@@ -388,9 +417,7 @@ void S800_SysTick_Init(void)
 */
 void SysTick_Handler(void)
 {
-    // 按键下的功能选择
-    uint8_t SW = I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
-	if (systick_100ms_couter == 0) //利用1ms的SysTick产生100ms的定时器
+    if (systick_100ms_couter == 0) //利用1ms的SysTick产生100ms的定时器
 	{
 		systick_100ms_couter = 100;
 		systick_100ms_status = 1;
@@ -405,23 +432,62 @@ void SysTick_Handler(void)
 	}
 	else
 		systick_10ms_couter--;
+    // 按键下的功能选择
+    uint8_t SW = I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
+
 	
-	if (SW&1)
+	if (SW&1)   //按键1
 	{
 		systick_100ms_status	= systick_10ms_status = 0; //阻止任务1和2的调度
         functionChoice = 0;
 		GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,GPIO_PIN_0);		//点亮PN0
 	}
-    else if(SW&2)
+    else if(SW&2)   //按键2
     {
         systick_100ms_status	= systick_10ms_status = 0; //阻止任务1和2的调度
         functionChoice = 1;
         GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,GPIO_PIN_0);		//点亮PN0
     }
-    else if(SW&4){
+    else if(SW&4){  //按键3
         systick_100ms_status	= systick_10ms_status = 0; //阻止任务1和2的调度
         functionChoice = 2;
         GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,GPIO_PIN_0);		//点亮PN0
+    }
+    else if(SW&8){  //按键4——关闭闹钟
+        systick_100ms_status	= systick_10ms_status = 0; //阻止任务1和2的调度
+        clockFlag = 0;
+    }
+    else if(SW&16){
+        if(functionChoice==0){
+            second++;
+            //每过1s，秒钟加1
+            //秒钟
+            if((second+1) == 60)
+            {
+                carryFlag1 = 1;
+            }
+            second = (second+1) % 60;	//秒钟加1
+            //分钟
+            if(carryFlag1 == 1)
+            {	
+                if((minute+1) == 60)
+                    carryFlag2 = 1;
+                minute = (minute+1) % 60;	//分钟加1
+                carryFlag1 = 0;	//进位标志归零	
+            }
+            //时钟
+            if(carryFlag2 == 1)
+            {	
+                hour = (hour+1) % 60;	//分钟个位加1
+                carryFlag2 = 0;	//进位标志归零	
+            }
+        }
+        if(functionChoice==1){
+            
+        }
+    }
+    else if(SW&32){
+
     }
 
 }
@@ -499,5 +565,5 @@ void GPIOJ_Handler(void) 	//PortJ中断处理
 
 	if (intStatus & GPIO_PIN_0) {	//PJ0触发中断
 	    SW_cnt = SW_cnt % 4 + 1;
-	} 
+	}
 }
