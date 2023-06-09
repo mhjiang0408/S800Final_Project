@@ -1,0 +1,17 @@
+.\objects\exp3-6.o: exp3-6.c
+.\objects\exp3-6.o: I:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\exp3-6.o: I:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\objects\exp3-6.o: I:\Keil_v5\ARM\ARMCC\Bin\..\include\ctype.h
+.\objects\exp3-6.o: I:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+.\objects\exp3-6.o: .\inc\hw_memmap.h
+.\objects\exp3-6.o: .\driverlib\debug.h
+.\objects\exp3-6.o: .\driverlib\gpio.h
+.\objects\exp3-6.o: .\inc\hw_i2c.h
+.\objects\exp3-6.o: .\inc\hw_types.h
+.\objects\exp3-6.o: .\driverlib\i2c.h
+.\objects\exp3-6.o: .\driverlib\pin_map.h
+.\objects\exp3-6.o: .\driverlib\sysctl.h
+.\objects\exp3-6.o: .\driverlib\systick.h
+.\objects\exp3-6.o: .\driverlib\interrupt.h
+.\objects\exp3-6.o: .\driverlib\uart.h
+.\objects\exp3-6.o: .\inc\hw_ints.h
