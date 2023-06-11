@@ -21,35 +21,43 @@ Target DLL:      lmidk-agdi.dll V???
 Dialog DLL:      TCM.DLL V1.21.0.0
  
 <h2>Project:</h2>
-F:\2023_spring\S800\EXP3\EXP1.uvprojx
-Project File Date:  05/29/2023
+F:\2023_spring\S800\S800Final_Project\EXP1.uvprojx
+Project File Date:  06/02/2023
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 4 (build 422)', folder: 'I:\Keil_v5\ARM\ARMCC\Bin'
 Rebuild target 'Target 1'
 assembling startup_TM4C129.s...
-compiling exp3-6.c...
-exp3-6.c(137): warning:  #223-D: function "sscanf" declared implicitly
-  				sscanf(uart_receive_char,"%3s%2s%1s%2s%1s%2s",command_char,hour_char,gap_char,minute_char,gap_char,second_char);	
-exp3-6.c(141): warning:  #223-D: function "sscanf" declared implicitly
-  				sscanf(uart_receive_char,"%s",command_char);
-exp3-6.c(151): warning:  #223-D: function "atoi" declared implicitly
-  				hour = atoi(hour_char);
-exp3-6.c(155): warning:  #223-D: function "sprintf" declared implicitly
-  				sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
-exp3-6.c(161): warning:  #223-D: function "atoi" declared implicitly
-  				if((second+atoi(second_char)) >= 60)
-exp3-6.c(189): warning:  #223-D: function "sprintf" declared implicitly
-  				sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
-exp3-6.c(194): warning:  #223-D: function "sprintf" declared implicitly
-  				sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
-exp3-6.c(275): warning:  #550-D: variable "result"  was set but never used
+compiling main.c...
+main.c(119): warning:  #223-D: function "sscanf" declared implicitly
+                  sscanf(uart_receive_char,"%3s%2s%1s%2s%1s%2s",command_char,hour_char,gap_char,minute_char,gap_char,second_char);	
+main.c(123): warning:  #223-D: function "sscanf" declared implicitly
+                  sscanf(uart_receive_char,"%s",command_char);
+main.c(127): warning:  #223-D: function "sscanf" declared implicitly
+                  sscanf(uart_receive_char,"%7s%1s",command_char,commandIndex);
+main.c(135): warning:  #223-D: function "atoi" declared implicitly
+                  hour = atoi(hour_char);
+main.c(139): warning:  #223-D: function "sprintf" declared implicitly
+                  sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
+main.c(144): warning:  #223-D: function "sprintf" declared implicitly
+                  sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
+main.c(149): warning:  #223-D: function "sprintf" declared implicitly
+                  sprintf(time_char,"FUNCTIONSET%01d",commandIndex);
+main.c(85): warning:  #177-D: variable "month_char"  was declared but never referenced
+      char month_char[12][4] = {"JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
+main.c(86): warning:  #177-D: variable "num_char"  was declared but never referenced
+      char num_char[12][3] = {"00","01","02","03","04","05","06","07","08","09","10","11"};  
+main.c(297): warning:  #550-D: variable "result"  was set but never used
+      uint8_t result;
+main.c(337): warning:  #550-D: variable "result"  was set but never used
+      uint8_t result;
+main.c(402): warning:  #550-D: variable "result"  was set but never used
   	uint8_t result;
-exp3-6.c: 8 warnings, 0 errors
+main.c: 12 warnings, 0 errors
 compiling system_TM4C129.c...
 linking...
-Program Size: Code=7492 RO-data=2252 RW-data=36 ZI-data=620  
-".\Objects\EXP1.axf" - 0 Error(s), 8 Warning(s).
+Program Size: Code=8720 RO-data=2336 RW-data=60 ZI-data=620  
+".\Objects\EXP1.axf" - 0 Error(s), 12 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -66,7 +74,7 @@ Package Vendor: Keil
    * Component: Startup Version: 1.0.0
 
 <h2>Collection of Component include folders:</h2>
-  F:\2023_spring\S800\EXP3\RTE\_Target_1
+  F:\2023_spring\S800\S800Final_Project\RTE\_Target_1
   I:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include
   I:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129
 
@@ -75,8 +83,8 @@ Package Vendor: Keil
    * Component: ARM::CMSIS:CORE:5.0.0
 
    * Component: Keil::Device:Startup:1.0.0
-      Source file:   Device\Source\ARM\startup_TM4C129.s
       Include file:  Device\Include\TM4C129\TM4C129.h
+      Source file:   Device\Source\ARM\startup_TM4C129.s
       Source file:   Device\Source\system_TM4C129.c
 Build Time Elapsed:  00:00:00
 </pre>

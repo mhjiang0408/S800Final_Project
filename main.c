@@ -44,7 +44,7 @@
 
 #define	I2C_FLASHTIME				1000				//1S
 #define GPIO_FLASHTIME			500				//500mS
-void        timeUpdate(uint8_t byte);
+
 void 		S800_Clock_Init(void);
 void 		S800_GPIO_Init(void);
 void		S800_I2C0_Init(void);
@@ -54,24 +54,90 @@ uint8_t I2C0_ReadByte(uint8_t DevAddr, uint8_t RegAddr);
 void 		S800_SysTick_Init(void);
 void 		S800_UART_Init(void);
 void 		UARTStringPut(const char *cMessage);
-void 		UARTStringPutNonBlocking(const char *cMessage);
+void 		UARTStringPut(const char *cMessage);
+void        timeUpdate(uint8_t byte);
+void        showTime(void);
+void        showDate(void);
+void AuthorDisplay(void);
+void Alarmring();
+void PWM_Init(void);
+void SWPressed();
+void change_day();
+void Uart_set();
+void setTime(char* str);
+void setDate(char* str);
+void setAlarm(char* str);
+void setCountDown(char* str);
+void transDate(char* str);
+void transTime(char* str);
+void transAlarm(char* str);
+void Alarm_time();
+void Display_date();
+void Display_time();
+void Display_alarm();
+void Display_countdown();
 
+
+
+uint8_t result;
 uint32_t ui32SysClock;
 uint8_t seg7[] = {0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f,0x77,0x7c,0x58,0x5e,0x079,0x71,0x5c};
-
+uint8_t author[] = {2,1,9,1,0,0,1,7};
+uint8_t welcome[]={0x76,0x79,0x38,0x0e,0x37,0x76};
+uint8_t x=0,y=0,z=0,i=0,t=0;
 //systick software counter define
-volatile uint16_t systick_10ms_couter=0, systick_100ms_couter=0; //10ms和100ms计时器
-volatile uint8_t	systick_10ms_status=0, systick_100ms_status=0; //10ms和100ms计时状态
-volatile uint8_t functionChoice = 0;	//功能选择标志
-volatile uint8_t month=0,day=0;    //从左到右分别代表月份、日期
+
+uint16_t i2c_flash_cnt1=0;
+volatile uint16_t systick_1ms_couter2=0,systick_1ms_couter=0,systick_1ms_couter1=0,systick_10ms_couter=0, systick_100ms_couter=0,systick_500ms_couter=0; //10ms和100ms计时器
+volatile uint8_t	systick_1ms_status2=0,systick_1ms_status1=0,systick_10ms_status=0, systick_100ms_status=0,systick_1ms_status=0; //10ms和100ms计时状态
+
+// 毫秒存储变量
+volatile int msCounter=0;
+volatile int pressStart[2];
+volatile int pressEnd[2];
+volatile int PJPressed=0;
+volatile uint16_t systick_1s_couter;
+volatile uint8_t	systick_1s_status;
+volatile uint8_t rightshift = 0x01;    //右移标志
+// volatile uint8_t rightshift1 = 0x01;
+volatile uint8_t functionChoice = 1;	//功能选择标志
+volatile uint8_t permitted = 0;	//允许设置功能标志
+volatile uint8_t  column=0,row=0,timer=0,button_time=0;
+volatile uint8_t  initCount = 0;
+
+// 初始化时间
+volatile uint8_t button_status=0;
+volatile uint8_t t1=0;
+volatile uint8_t t2=0;
+volatile uint8_t t3=0;
+volatile uint8_t t4=0;
+volatile uint8_t t5=0;
+volatile int countdown_value=6000;//初始倒计时
+volatile int countdown[7];
+volatile int countdown_start;
+volatile int countdown_stop;
+char p[16]={'S','E','T','T','I','M','E','1','2','-','0','0','-','0','0',' '};
+char p2[18]={'S','E','T','D','A','T','E','2','0','2','3','/','0','6','/','1','1',' '};
+char p3[19]={'S','E','T','A','L','A','R','M','1','0','-','0','0','-','0','0',' '};
+
+volatile uint8_t Sw_status=0x00;
+volatile int year=2023,month=6,day=13;    //从左到右分别代表年份，月份、日期
 volatile uint8_t setHour=0,setMinute=0,setSecond=0;	//从左到右分别代表设置闹钟的时钟、分钟、秒钟
-volatile uint8_t hour=12, minute=0, second=0;	//从左到右分别代表时钟、分钟、秒钟
-volatile uint8_t carryFlag1 = 0, carryFlag2 = 0,carryFlag3=0,carryFlag4=0; //判断低位加1后相邻高位是否需要加1的标志
+volatile int hour=12, minute=0, second=0;	//从左到右分别代表时钟、分钟、秒钟
+volatile uint8_t carryFlag1 = 0, carryFlag2 = 0,carryFlag3=0,carryFlag4=0,carryFlag5=0; //判断低位加1后相邻高位是否需要加1的标志
 volatile uint8_t daysOfMonth[12] = {32,29,32,31,32,31,32,32,31,32,31,32}; //每月的天数
 volatile uint8_t clockFlag = 0;    //闹钟响应标志
+int audio=784;
+
+// 字符串存储
+
+char send_char[100]; //发出字符串
+char send_char1[100]; //发出字符串
+char send_char2[100]; //发出字符串
+
 
 volatile uint8_t uart_receive_status = 0;
-char uart_receive_char[10];
+char uart_receive_char[100];
 
 int main(void)
 {
@@ -90,7 +156,7 @@ int main(void)
 	char minute_char[3];
 	char second_char[3];
 	
-	char command_char[8]; //存储PC端发来的“SET”、“INC”或“GETTIME”
+	char uart_receive_char[8]; //存储PC端发来的“SET”、“INC”或“GETTIME”
 	char gap_char[2];	//存储“-”或“：”
 
 	IntMasterDisable();	//关中断
@@ -103,95 +169,940 @@ int main(void)
 	
 	IntMasterEnable();	//开中断	
 	
-	while (1)
-	{
-        if(uart_receive_status)
-        {
-            // 串口信息接收
-            uart_receive_status = 0;
+	// while (1)
+	// {
+    //     if(uart_receive_status)
+    //     {
+    //         // 串口信息接收
+    //         uart_receive_status = 0;
             
-            //存储PC端发来的指令
-            if(strlen(uart_receive_char) == 11)
-            {
-                sscanf(uart_receive_char,"%3s%2s%1s%2s%1s%2s",command_char,hour_char,gap_char,minute_char,gap_char,second_char);	
-            }
-            else if(strlen(uart_receive_char) == 7)
-            {
-                sscanf(uart_receive_char,"%s",command_char);
-            }
-            else if(strlen(uart_receive_char) == 8)
-            {
-                sscanf(uart_receive_char,"%7s%1s",command_char,commandIndex);
-            }
-            else
-                UARTStringPut("Unknown!\r\n");
+    //         //存储PC端发来的指令
+    //         if(strlen(uart_receive_char) == 11)
+    //         {
+    //             sscanf(uart_receive_char,"%3s%2s%1s%2s%1s%2s",uart_receive_char,hour_char,gap_char,minute_char,gap_char,second_char);	
+    //         }
+    //         else if(strlen(uart_receive_char) == 7)
+    //         {
+    //             sscanf(uart_receive_char,"%s",uart_receive_char);
+    //         }
+    //         else if(strlen(uart_receive_char) == 8)
+    //         {
+    //             sscanf(uart_receive_char,"%7s%1s",uart_receive_char,commandIndex);
+    //         }
+    //         else
+    //             UARTStringPut("Unknown!\r\n");
             
-            //判断PC端发来的命令并执行，若为无效指令，回以“Unknown”
-            if(strcmp(command_char, "SET") == 0)
-            {
-                hour = atoi(hour_char);
-                minute = atoi(minute_char);
-                second = atoi(second_char);
+    //         //判断PC端发来的命令并执行，若为无效指令，回以“Unknown”
+    //         if(strcmp(uart_receive_char, "SET") == 0)
+    //         {
+    //             hour = atoi(hour_char);
+    //             minute = atoi(minute_char);
+    //             second = atoi(second_char);
                 
-                sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
-                UARTStringPut(time_char);
-            }
-            else if(strcmp(command_char, "GETTIME") == 0)
-            {
-                sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
-                UARTStringPut(time_char);
-            }
-            else if(strcmp(command_char,"INITSET")==0){
-                // 调整当前功能状态
-                sprintf(time_char,"FUNCTIONSET%01d",commandIndex);
-                functionChoice = commandIndex;
-                UARTStringPut(time_char);
-            }
-            else
-                UARTStringPut("Unknown!\r\n");
-        }
+    //             sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
+    //             UARTStringPut(time_char);
+    //         }
+    //         else if(strcmp(uart_receive_char, "GETTIME") == 0)
+    //         {
+    //             sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
+    //             UARTStringPut(time_char);
+    //         }
+    //         else if(strcmp(uart_receive_char,"INITSET")==0){
+    //             // 调整当前功能状态
+    //             sprintf(time_char,"FUNCTIONSET%01d",commandIndex);
+    //             functionChoice = commandIndex;
+    //             UARTStringPut(time_char);
+    //         }
+    //         else
+    //             UARTStringPut("Unknown!\r\n");
+    //     }
+    //     switch (functionChoice)
+    //     {
+    //     case 0: //功能1：时间的显示及设置
+    //         if (systick_100ms_status) //100ms定时到
+    //         {
+    //             systick_100ms_status	= 0; //重置100ms定时状态
+                
+    //             if (++i2c_flash_cnt_s >= I2C_FLASHTIME/100)  //10*100ms=1s
+    //             {
+    //                 i2c_flash_cnt_s	= 0;
+                    
+    //                 //每过1s，秒钟加1
+    //                 timeUpdate(0);
+    //             }
+    //         }
+    //         //数码管显示”分钟-秒钟”
+    //         //显示时钟
+    //         showTime();
+    //         break;
+    //     case 1://显示日期
+    //     // 要照常更新时间，否则会出错
+    //         if (systick_100ms_status) //100ms定时到
+    //         {
+    //             systick_100ms_status	= 0; //重置100ms定时状态
+                
+    //             if (++i2c_flash_cnt_s >= I2C_FLASHTIME/100)  //10*100ms=1s
+    //             {
+    //                 i2c_flash_cnt_s	= 0;
+                    
+    //                 //每过1s，秒钟加1
+    //                 timeUpdate(0);
+    //             }
+    //         }
+    //         //显示日期
+    //         showDate();
+    //         break;
+    //     default:
+    //         break;
+    //     }
+	AuthorDisplay();
+    while (1)
+    {
+		Sw_status=~I2C0_ReadByte(TCA6424_I2CADDR, TCA6424_INPUT_PORT0);  //read the SW status
+        if (systick_100ms_status) //100ms
+		{
+			systick_100ms_status	= 0; //Reset 100ms
+			
+			if (++i2c_flash_cnt1		>= I2C_FLASHTIME/100)  //1s
+			{
+				i2c_flash_cnt1				= 0;
+				timeUpdate(0);
+			}
+		}
+        countdown_value%=9999;
+        Alarmring();
+        SWPressed();
+        Uart_set();
         switch (functionChoice)
         {
-        case 0: //功能1：时间的显示及设置
-            if (systick_100ms_status) //100ms定时到
-            {
-                systick_100ms_status	= 0; //重置100ms定时状态
-                
-                if (++i2c_flash_cnt_s >= I2C_FLASHTIME/100)  //10*100ms=1s
-                {
-                    i2c_flash_cnt_s	= 0;
-                    
-                    //每过1s，秒钟加1
-                    timeUpdate(0);
-                }
-            }
-            //数码管显示”分钟-秒钟”
-            //显示时钟
-            showTime();
+        case 0:
+            Display_date();
             break;
-        case 1://显示日期
-        // 要照常更新时间，否则会出错
-            if (systick_100ms_status) //100ms定时到
-            {
-                systick_100ms_status	= 0; //重置100ms定时状态
-                
-                if (++i2c_flash_cnt_s >= I2C_FLASHTIME/100)  //10*100ms=1s
-                {
-                    i2c_flash_cnt_s	= 0;
-                    
-                    //每过1s，秒钟加1
-                    timeUpdate(0);
-                }
-            }
-            //显示日期
-            showDate();
-            break;
+        case 1:
+			Display_time();
+			break;
+		case 2:
+			Display_countdown();
+			break;
+		case 3:
+			Display_alarm();
+			break;
+		
         default:
             break;
         }
+    }//end while
+}
+
+void change_day(){     //针对日期进位
+    switch(month){
+        case 1:day=31;break;
+        case 2:if(year%400==0||(year%4==0&&year%100!=0)){day=29;break;}
+                        else {day=28;break;}
+        case 3:day=31;break;
+        case 4:day=30;break;
+        case 5:day=31;break;
+        case 6:day=30;break;
+        case 7:day=31;break;
+        case 8:day=31;break;
+        case 9:day=30;break;
+        case 10:day=31;break;
+        case 11:day=30;break;
+        case 12:day=31;break;
+    }
+}
+
+
+/***********************功能集成部分*****************/
+
+void AuthorDisplay(void)
+{
+	uint16_t count1=0,count2=0;
+	uint8_t flag=8;
+	volatile uint8_t result;
+	volatile uint16_t	i2c_flash_cnt=0;
+	
+	SysCtlDelay(ui32SysClock/3); //1s
+	UARTStringPut("HELLO,JMH!.\n");
+	
+	while(count2<1000)
+	{
+	  while(count1<1000)
+	  {
+		  if (systick_1ms_status) //1ms定时到
+		  {
+				systick_1ms_status	= 0; //重置1ms定时状态
+				flag = flag%8+1;
+				I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x00);
+					
+				//Welcome sentence:"HELLOJMH"
+				if(flag==1)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,welcome[0]);	//write port 1:"H" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1);				//write port 2
+					}
+				if(flag==2)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,welcome[1]);	//write port 1:"E" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,2);				//write port 2
+					}
+				if(flag==3)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,welcome[2]);	//write port 1:"L" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,4);				//write port 2
+					}
+				if(flag==4)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,welcome[2]);	//write port 1:"L" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,8);				//write port 2
+					}
+				if(flag==5)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,welcome[3]);	//write port 1:"O" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,16);				//write port 2
+					}
+				if(flag==6)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,welcome[4]);	//write port 1:"J" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,32);				//write port 2
+					}
+				if(flag==7)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,welcome[5]);	//write port 1:"M" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,64);				//write port 2
+					}
+				if(flag==8)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,welcome[0]);	//write port 1:"H" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,128);				//write port 2
+					}
+					count1++;
+				}
+		}
+		count1=0;
+		I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+		I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0xff);
+    // BootMusic();
+		//SysCtlDelay(ui32SysClock/3); //1s
+		while(count2<1000)
+		{
+			I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x00);
+			if (systick_1ms_status) //1ms
+			{
+				flag=flag%8+1;
+				systick_1ms_status	= 0; //Reset 1ms
+				//StudentCode:521021910017
+				if(flag==1)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[author[0]]);	//write port 1:"2" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1);				//write port 2
+					}
+				if(flag==2)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[author[1]]);	//write port 1:"1" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,2);				//write port 2
+					}
+				if(flag==3)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[author[2]]);	//write port 1:"9" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,4);				//write port 2
+					}
+				if(flag==4)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[author[3]]);	//write port 1:"1" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,8);				//write port 2
+					}
+				if(flag==5)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[author[4]]);	//write port 1:"0" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,16);				//write port 2
+					}
+				if(flag==6)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[author[5]]);	//write port 1:"0" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,32);				//write port 2
+					}
+				if(flag==7)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[author[6]]);	//write port 1:"1" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,64);				//write port 2
+					}
+				if(flag==8)
+					{
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[author[7]]);	//write port 1:"7" 					
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,128);				//write port 2
+					}
+					count2++;
+				}
+		}
+		I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+		I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0xff);
+		SysCtlDelay(ui32SysClock/3); //1s
+	}
+}
+
+void Display_date(){   //日期显示
+    uint8_t date_value[8];
+    uint8_t y1=0x0;
+	// I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0xaa);
+	date_value[0]=year/1000;
+	date_value[1]=year/100-10*date_value[0];
+	date_value[2]=year/10-10*date_value[1]-100*date_value[0];
+	date_value[3]=year%10;
+	date_value[4]=month/10;
+	date_value[5]=month%10;
+	date_value[6]=day/10;
+	date_value[7]=day%10;
+	for(t1=0;t1<8;t1++){
+		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[date_value[t1]]);
+		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t1);
+		Delay(1000);
+	}
+}
+
+void Display_time(){    //时间显示
+    uint8_t time_value[8];
+    uint8_t y2=0x0;
+	I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x55);
+	time_value[0]=hour/10;
+	time_value[1]=hour%10;
+	time_value[2]=0x40;    //显示中间横杆
+	time_value[3]=minute/10;
+	time_value[4]=minute%10;
+	time_value[5]=0x40;   //显示中间横杠
+	time_value[6]=second/10;
+	time_value[7]=second%10;
+	for(t2=0;t2<8;t2++)
+	{
+		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+		if(t2==2||t2==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
+		else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[time_value[t2]]);                                                 		//write port 1                                             		//write port 1
+		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t2);
+		Delay(1000);
+	}		
+}
+
+void Display_alarm(){   //闹钟显示
+    uint8_t alarm_value[8];
+    uint8_t y3=0x0;
+	I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0xa0);
+	alarm_value[0]=setHour/10;
+	alarm_value[1]=setHour%10;
+	alarm_value[2]=17;    //显示中间横杆
+	alarm_value[3]=setMinute/10;
+	alarm_value[4]=setMinute%10;
+	alarm_value[5]=17;   //显示中间横杠
+	alarm_value[6]=setSecond/10;
+	alarm_value[7]=setSecond%10;
+	for(t3=0;t3<8;t3++){
+		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+		if(t3==2||t3==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
+		else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[alarm_value[t3]]);                                                 		//write port 1                                             		//write port 1
+		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t3);
+		Delay(1000);
+	}
+}
+
+void Display_countdown(){   //倒计时显示
+    uint8_t y4=0x0;
+	I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x0a);
+	if(countdown_start==1){
+		if(systick_10ms_status){
+			systick_10ms_status=0;
+			countdown_value--;
+		}
+	}
+	if(countdown_value<=0){
+		countdown_start=0;
+		countdown_value=0;
+		I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x00);}
+	countdown[0]=countdown_value/100000;
+	countdown[1]=countdown_value/10000-10*countdown[0];
+	countdown[3]=countdown_value/1000-100*countdown[0]-10*countdown[1];
+	countdown[4]=(countdown_value/100)-1000*countdown[0]-100*countdown[1]-10*countdown[3];
+	countdown[6]=(countdown_value/10)-10000*countdown[0]-1000*countdown[1]-100*countdown[3]-10*countdown[4];
+	countdown[7]=countdown_value%10;
+	for(t4=0;t4<8;t4++){
+		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+		if(t4==2||t4==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
+		else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[countdown[t4]]);                                                 		//write port 1                                             		//write port 1
+		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t4);
+		Delay(1000);
+	}
+}
+
+
+/*****************工具函数部分***********************/
+void Alarmring(){  //注意添加，按下按键止闹
+    if((setHour==hour&&setMinute==minute&&setSecond==second)||clockFlag!=0){
+		if(clockFlag==1){
+			PWM_Init();
+		}
+        clockFlag=1;
+    }
+}
+void PWM_Init(void)    //设定闹钟蜂鸣器响起
+{
+    GPIOPinWrite(GPIO_PORTK_BASE, GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE, GPIO_PIN_5));
+    SysCtlDelay(ui32SysClock/(audio*3));			
+    GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_1, GPIO_PIN_1);			// Turn on the indicator LED.
+    I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x00);        // Turn on the LEDs.
+}
+
+void SWPressed(void)
+{
+	uint8_t old_key;
+	uint8_t key;
+	int temYear = year-2000;
+	old_key = ~I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
+	if(old_key&0x01)
+	{
+		SysCtlDelay(ui32SysClock/15); //2ms
+		key = ~I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
+		if((key&0x01)!=0x00){
+			functionChoice=(functionChoice+1)%5;
+		}
+	}
+	if(old_key&0x02)
+	{
+		SysCtlDelay(ui32SysClock/1500); //2ms
+		key = ~I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
+		if((key&0x02)!=0x00){
+			if(functionChoice==0){//按下SW2，加年份
+				year=(temYear+1)%100+2000;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_date();
+
+			}
+			if(functionChoice==2){//开始计时
+				countdown_start=1;
+				countdown_stop=0;
+			}
+		}
+	}
+	if(old_key&0x04)
+	{
+		SysCtlDelay(ui32SysClock/1500); //2ms
+		key = ~I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
+		if((key&0x04)!=0x00){
+			if(functionChoice==0){//按下SW3，加月份
+				month=(month+1)%13+1;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_date();
+
+			}
+			if(functionChoice==2){//暂停计时
+				countdown_start=0;
+				countdown_stop=1;
+			}
+		}
+	}
+	if(old_key&0x08)
+	{
+		SysCtlDelay(ui32SysClock/1500); //2ms
+		key = ~I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
+		if((key&0x08)!=0x00){
+			if(functionChoice==0){//按下SW4，加天数
+				day=(day+1)%(daysOfMonth[month-1]+1);
+				if(day==0)day++;
+
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_date();
+
+			}
+			if(functionChoice==2&&countdown_start==0){
+				countdown_value+=100;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_countdown();
+
+			}
+		}
+		
+	}
+	if(old_key&0x10)
+	{
+		SysCtlDelay(ui32SysClock/1500); //2ms
+		key = ~I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
+		if((key&0x10)!=0x00){
+			if(functionChoice==1){//按下SW5，加小时
+				hour=(hour+1)%24;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_time();
+
+			}
+			if(functionChoice==3){
+				setHour=(setHour+1)%24;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_alarm();
+
+			}
+			if(functionChoice==2&&countdown_start==0){
+				countdown_value-=100;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_countdown();
+
+			}
+		}
 
 		
-	}//end while
+	}
+	if(old_key&0x20)
+	{
+		SysCtlDelay(ui32SysClock/1500); //2ms
+		key = ~I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
+		if((key&0x20)!=0x00){
+			if(functionChoice==1){//按下SW6，加分钟
+				minute=(minute+1)%60;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_time();
+
+			}
+			if(functionChoice==3){
+				setMinute=(setMinute+1)%60;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_alarm();
+
+			}
+			if(functionChoice==2&&countdown_start==0){
+				countdown_value+=10;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_countdown();
+
+			}
+		}
+		
+		
+	}
+	if(old_key&0x40)
+	{
+		SysCtlDelay(ui32SysClock/1500); //2ms
+		key = ~I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
+		if((key&0x40)!=0x00){
+			if(functionChoice==1){//按下SW7，加秒数
+				second=(second+1)%60;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_time();
+
+			}
+			if(functionChoice==3){
+				setSecond=(setSecond+1)%60;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_alarm();
+
+			}
+			if(functionChoice==2&&countdown_start==0){
+				countdown_value-=10;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_countdown();
+
+			}
+		}
+		
+	}
+	if(old_key&0x80)
+	{
+		SysCtlDelay(ui32SysClock/1500); //2ms
+		key = ~I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
+		if((key&0x40)!=0x00){
+			clockFlag=0;
+			if(functionChoice==2&&countdown_start==0){//按下SW8，加秒数
+				countdown_value+=1;
+				SysCtlDelay(ui32SysClock/15); //2ms
+				Display_countdown();
+
+			}
+			
+		}
+	}
+}
+
+// void SWPressed(){     //按键情况获取
+// 	if(systick_100ms_status){
+// 		systick_100ms_status=0;
+// 		if(Sw_status&0x01){
+// 			// 功能选择
+// 			button_time++;
+// 			if(button_time>=100){
+// 				button_time=0;
+// 				functionChoice=(functionChoice+1)%4;
+// 			}
+// 		}
+// 		if(Sw_status&0x02&&functionChoice==0){  //按下SW2，加年份
+// 			button_time++;
+// 			if(button_time>=100){
+// 				button_time=0;
+// 				year++;
+// 			}	
+// 		}
+// 		if(Sw_status&0x04&&functionChoice==0){   //按下SW3，加月份
+// 				button_time++;
+// 			if(button_time>=100){
+// 				button_time=0;
+// 				month++;
+// 				if(month>12){
+// 					month=12;
+// 					year++;
+// 				}
+// 			}	
+// 		}
+// 		if(Sw_status&0x08&&functionChoice==0){  //按下SW4，加天数
+// 				button_time++;
+// 			if(button_time>=100){
+// 				button_time=0;
+// 				timeUpdate(3);
+// 			}	
+// 		}
+// 		if(Sw_status&0x10&&functionChoice==0){  //按下SW5，减天数
+// 				button_time++;
+// 			if(button_time>=100){
+// 				button_time=0;
+// 				day--;
+// 				if(day<=0){
+// 				month--;
+// 				change_day();
+// 					if(month<=0){
+// 						month=12;
+// 						year--;
+// 					}
+// 				}
+// 			}	
+// 		}
+// 		if(Sw_status&0x20&&functionChoice==0){    //按下SW6，减月份
+// 				button_time++;
+// 			if(button_time>=100){
+// 				button_time=0;
+// 				month--;
+// 				if(month<=0){
+// 					month=12;
+// 					year--;
+// 				}
+// 			}	
+// 		}
+// 		if(Sw_status&0x40&&functionChoice==0){   //按下SW7，减年份
+// 				button_time++;
+// 			if(button_time>=100){
+// 				button_time=0;
+// 				year--;
+// 			}	
+// 		}
+// 		if(Sw_status&0x02&&functionChoice==1){    //按下SW2，加小时
+// 				button_time++;
+// 			if(button_time>=100){
+// 				button_time=0;
+// 				hour++;
+// 			}
+// 		}
+// 		if(Sw_status&0x04&&functionChoice==1){   //按下SW3，加分钟
+// 				button_time++;
+// 			if(button_time>=100){
+// 				button_time=0;
+// 				minute++;
+// 				if(minute>=60){
+// 					minute=0;
+// 					hour++;
+// 				}
+// 			}
+// 		}
+// 		if(Sw_status&0x08&&functionChoice==1){   //按下SW4，减分钟
+// 				button_time++;
+// 			if(button_time>=100){
+// 				button_time=0;
+// 				minute--;
+// 				if(minute<0){
+// 					minute=59;
+// 					hour--;
+// 				}
+// 			}
+// 		}
+// 		if(Sw_status&0x10&&functionChoice==1){   //按下SW5,减小时
+// 				button_time++;
+// 			if(button_time>=100){
+// 				button_time=0;
+// 				hour--;
+// 			}
+// 		}
+// 		if(Sw_status&0x02&&functionChoice==2)   //按下SW2，加小时
+// 		{ 
+// 			button_time++;
+// 			if(button_time==100)
+// 			{
+// 				button_time=0;
+// 				setHour++;
+// 				}
+// 		}
+// 		if(Sw_status&0x04&&functionChoice==2)   //按下SW3，加分钟
+// 		{ 
+// 			button_time++;
+// 			if(button_time==100)
+// 			{
+// 				button_time=0;
+// 				setMinute++;
+// 				if(setMinute>=60){
+// 						setMinute=0;
+// 					setHour++;
+// 				}
+// 				}
+// 		}
+// 		if(Sw_status&0x08&&functionChoice==2)    //按下SW4，加一秒
+// 		{ 
+// 			button_time++;
+// 			if(button_time==100)
+// 			{
+// 				button_time=0;
+// 				setSecond++;
+// 				if(setSecond>=60){
+// 						setSecond=0;
+// 					setMinute++;
+// 				}
+// 				}
+// 		}    
+// 		if(Sw_status&0x80&&clockFlag==1)  //按下SW8，止闹
+// 			{  button_time++;
+// 				if(button_time==100)
+// 				{ button_time=0;
+// 					clockFlag=0;
+// 				}
+// 			}
+// 		if(Sw_status&0x02&&functionChoice==3)   //按下SW2，开始计时
+// 			{  button_time++;
+// 				if(button_time==100)
+// 				{ button_time=0;
+// 					countdown_start=1;
+// 					countdown_stop=0;
+// 				}
+// 			}
+// 		if(Sw_status&0x04&&functionChoice==3)   //按下SW3，停止计时
+// 			{ button_time++;
+// 				if(button_time==100)
+// 				{ button_time=0;
+// 					countdown_stop=1;
+// 					countdown_start=0;
+// 				}
+// 			}	
+// 		if(Sw_status&0x08&&functionChoice==3)   //按下SW4，加1s
+// 			{ button_time++;
+// 				if(button_time==100)
+// 				{ button_time=0;
+// 					countdown_value+=100;
+// 				}
+// 			}		
+// 		if(Sw_status&0x10&&functionChoice==3)   //按下SW5，减一秒
+// 			{ button_time++;
+// 				if(button_time==100)
+// 				{ button_time=0;
+// 					countdown_value-=100;
+// 				}
+// 			}		
+// 		if(Sw_status&0x20&&functionChoice==3)   //按下SW6，加0.1s
+// 			{ button_time++;
+// 				if(button_time==100)
+// 				{ button_time=0;
+// 					countdown_value+=10;
+// 				}
+// 			}
+// 		if(Sw_status&0x40&&functionChoice==3)   //按下SW7，加0.01s
+// 			{ button_time++;
+// 				if(button_time==100)
+// 				{ button_time=0;
+// 					countdown_value+=1;
+// 				}
+// 			}
+// 		if(Sw_status&0x80&&functionChoice==3)   //按下SW8，减0.01s
+// 			{ button_time++;
+// 				if(button_time==100)
+// 				{ button_time=0;
+// 					countdown_value-=1;
+// 				}
+// 			}
+// 	}
+// }
+
+void Uart_set(){   //串口通信部分
+	if(uart_receive_status){
+		if (uart_receive_char[0]=='?'){      //
+			char *kk1="ERROR COMMANDS!\n";
+			char *k1="COMMANDS + FUNCTIONS HELP\n";
+			char *s1="INITCLOCK :initialize the clock\n";
+			char *s2="SETDATEXXXX/XX/XX :set the date(year/month/day)\n";
+			char *s3="SETTIMEXX:XX:XX :set the clock time(hour:minute:second)\n";
+			char *s4="SETALARMXX:XX:XX :set the alarm time(hour:minute:second)\n";
+			char *s5="GETTIME :get the current clock time\n";
+			char *s6="GETDATE :get the current date\n";
+			char *s7="GETALARM :get the current alarm time\n";
+			char *s8="RUNDATE :display date\n";
+			char *s9="RUNTIME :display time\n";
+			char *s10="RUNSTWATCHXX.XX :run XX.XXs countdown stwatch\n";
+			char *s11="TIPS:end with '$'\n";
+		UARTStringPut(k1);
+		UARTStringPut(s1);
+		UARTStringPut(s2);
+		UARTStringPut(s3);
+		UARTStringPut(s4);
+		UARTStringPut(s5);
+		UARTStringPut(s6);
+		UARTStringPut(s7);
+		UARTStringPut(s8);
+		UARTStringPut(s9);
+		UARTStringPut(s10);
+		UARTStringPut(s11);
+		functionChoice=1;
+		}
+		else if(uart_receive_char[0]=='G'&&uart_receive_char[3]=='D')  //当前日期获取
+		{
+			const char *p4;
+			char *p7="DATE";
+			transDate(send_char);
+			p4=send_char;
+			UARTStringPut(p7);
+			UARTStringPut(p4);
+			*send_char='0';
+			functionChoice=0;
+		}
+		else if((uart_receive_char[0]=='R'&&uart_receive_char[3]=='D'))  //日期运行RUNDATE
+		{
+			const char *p4;
+			char *p7="DATE";
+			transDate(send_char);
+			p4=send_char;
+			UARTStringPut(p7);
+			UARTStringPut(p4);
+			*send_char='0';
+			functionChoice=0;
+		}
+		else if((uart_receive_char[0]=='G'&&uart_receive_char[3]=='T'))  //当前时间获取
+		{
+			const char *p5;
+			char *p8="TIME";
+			functionChoice=1;
+			transTime(send_char);
+			p5=send_char;
+			UARTStringPut(p8);
+			UARTStringPut(p5);
+			*send_char='0';
+			functionChoice=1;
+		}
+		else if((uart_receive_char[0]=='R'&&uart_receive_char[3]=='T'))  //时间运行RUNTIME
+		{
+			const char *p5;
+			char *p8="TIME";
+			functionChoice=1;
+			transTime(send_char);
+			p5=send_char;
+			UARTStringPut(p8);
+			UARTStringPut(p5);
+			*send_char='0';
+			functionChoice=1;
+		}
+		else if((uart_receive_char[0]=='R'&&uart_receive_char[3]=='S'))  //秒表运行RUNSTWATCH
+		{
+			UARTStringPut((uint8_t *)"countdown");
+			UARTStringPut((uint8_t *)uart_receive_char+10);
+			UARTStringPut((uint8_t *)"s");
+			countdown_value=(atof(uart_receive_char+10)*100);
+		*uart_receive_char='0';
+			countdown_start=1;
+			functionChoice=2;
+		}
+		else if((uart_receive_char[0]=='G'&&uart_receive_char[3]=='A'))  //闹钟时间获取
+		{
+			const char *p6;
+			char *p9="ALARM";
+			transAlarm(send_char);
+			p6=send_char;
+			UARTStringPut(p9);
+			UARTStringPut(p6);
+			*send_char='0';
+			functionChoice=3;
+		}
+		else if((uart_receive_char[0]=='I'&&uart_receive_char[3]=='C'))
+		{
+			strcpy(uart_receive_char,p);
+			setTime(uart_receive_char+7);
+			*uart_receive_char='0';
+			strcpy(uart_receive_char,p2);
+			setDate(uart_receive_char+7);
+		*uart_receive_char='0';
+			strcpy(uart_receive_char,p3);
+			setAlarm(uart_receive_char+8);
+		*uart_receive_char='0';
+		functionChoice=1;
+		}//初始化时钟
+		else if(uart_receive_char[0]=='I'&&uart_receive_char[3]=='A')
+		{
+			setHour=0;
+			setMinute=0;
+			setSecond=0;
+			functionChoice=3;
+		}
+		else if((uart_receive_char[0]=='S'&&uart_receive_char[3]=='T'))
+		{
+			setTime(uart_receive_char+7);
+			functionChoice=1;
+			*uart_receive_char='0';
+			functionChoice=1;
+		}//时间设置
+		else if((uart_receive_char[0]=='S'&&uart_receive_char[3]=='D'))
+		{
+			setDate(uart_receive_char+7);
+			functionChoice=0;
+			*uart_receive_char='0';
+			functionChoice=0;
+		}//日期设置
+		else if((uart_receive_char[0]=='S'&&uart_receive_char[3]=='A'))
+		{
+			setAlarm(uart_receive_char+8);
+			functionChoice=2;
+			*uart_receive_char='0';
+			functionChoice=3;
+		}//时钟1设置
+		else{
+			char *kk1="ERROR COMMANDS!\n";
+			char *k1="COMMANDS + FUNCTIONS HELP\n";
+			char *s1="INITCLOCK :initialize the clock\n";
+			char *s2="SETDATEXXXX/XX/XX :set the date(year/month/day)\n";
+			char *s3="SETTIMEXX:XX:XX :set the clock time(hour:minute:second)\n";
+			char *s4="SETALARMXX:XX:XX :set the alarm time(hour:minute:second)\n";
+			char *s5="GETTIME :get the current clock time\n";
+			char *s6="GETDATE :get the current date\n";
+			char *s7="GETALARM :get the current alarm time\n";
+			char *s8="RUNDATE :display date\n";
+			char *s9="RUNTIME :display time\n";
+			char *s10="RUNSTWATCHXX.XX :run XX.XXs countdown stwatch\n";
+			char *s11="TIPS:end with ' '\n";
+		UARTStringPut(kk1);
+		UARTStringPut(k1);
+		UARTStringPut(s1);
+		UARTStringPut(s2);
+		UARTStringPut(s3);
+		UARTStringPut(s4);
+		UARTStringPut(s5);
+		UARTStringPut(s6);
+		UARTStringPut(s7);
+		UARTStringPut(s8);
+		UARTStringPut(s9);
+		UARTStringPut(s10);
+		UARTStringPut(s11);
+		functionChoice=1;
+		}
+	uart_receive_status=0;
+	}
 }
 
 void timeUpdate(uint8_t byte){
@@ -217,15 +1128,8 @@ void timeUpdate(uint8_t byte){
         {	
             if((minute+1) == 60)
                 carryFlag2 = 1;
-            minute = (minute+1) % 60;	//分钟加1
+            minute = (minute + 1) % 60;	//分钟加1
             carryFlag1 = 0;	//进位标志归零	
-        }
-        
-        break;
-    case 1:
-        if((minute+1) == 60)
-        {
-            carryFlag2 = 1;
         }
         //时钟
         if(carryFlag2 == 1)
@@ -238,16 +1142,62 @@ void timeUpdate(uint8_t byte){
         }
         // 日期进位
         if(carryFlag3==1){
-            if((day+1)==daysOfMonth[month]){
+            if((day+1)==daysOfMonth[month-1]){
                 carryFlag4=1;
             }
-            day=(day+1)%daysOfMonth[month];
+            day=(day+1)%(daysOfMonth[month-1]);
+			if(day==0)day++;
             carryFlag3=0;
         }
         // 月份进位
         if(carryFlag4==1){
+            if((month+1)==13){
+                carryFlag5=1;
+            }
             month=(month+1)%13;
             carryFlag4=0;
+        }
+        // 年份进位
+        if(carryFlag5==1){
+            year=(year+1)%100;
+            carryFlag5=0;
+        }
+        break;
+    case 1:
+        if((minute+1) == 60)
+        {
+            carryFlag2 = 1;
+        }
+		minute = (minute + 1) % 60;	//分钟加1
+        //时钟
+        if(carryFlag2 == 1)
+        {	
+            if((hour+1)==24){
+                carryFlag3=1;
+            }
+            hour = (hour+1) % 60;	//分钟个位加1
+            carryFlag2 = 0;	//进位标志归零
+        }
+        // 日期进位
+        if(carryFlag3==1){
+            if((day+1)==daysOfMonth[month-1]){
+                carryFlag4=1;
+            }
+            day=(day+1)%(daysOfMonth[month-1]-1);
+            carryFlag3=0;
+        }
+        // 月份进位
+        if(carryFlag4==1){
+            if((month+1)==13){
+                carryFlag5=1;
+            }
+            month=(month+1)%13;
+            carryFlag4=0;
+        }
+        // 年份进位
+        if(carryFlag5==1){
+            year=(year+1)%100;
+            carryFlag5=0;
         }
         break;
     case 2:
@@ -255,33 +1205,67 @@ void timeUpdate(uint8_t byte){
         {
             carryFlag3 = 1;
         }
+		hour = (hour+1) % 24;	//分钟个位加1
         // 日期进位
         if(carryFlag3==1){
-            if((day+1)==daysOfMonth[month]){
+            if((day+1)==daysOfMonth[month-1]){
                 carryFlag4=1;
             }
-            day=(day+1)%daysOfMonth[month];
+            day=(day+1)%(daysOfMonth[month-1]-1);
+			if(day==0)day++;
             carryFlag3=0;
         }
         // 月份进位
         if(carryFlag4==1){
+            if((month+1)==13){
+                carryFlag5=1;
+            }
             month=(month+1)%13;
             carryFlag4=0;
+        }
+        // 年份进位
+        if(carryFlag5==1){
+            year=(year+1)%100;
+            carryFlag5=0;
         }
         break;
     case 3:
-        if((day+1) == month[daysOfMonth]])
+        if((day+1) == daysOfMonth[month-1])
         {
             carryFlag3 = 1;
         }
+		day=(day+1)%(daysOfMonth[month-1]-1);
+		if(day==0)day++;
         // 月份进位
         if(carryFlag4==1){
+            if((month+1)==13){
+                carryFlag5=1;
+            }
             month=(month+1)%13;
             carryFlag4=0;
         }
+        // 年份进位
+        if(carryFlag5==1){
+            year=(year+1)%100;
+            carryFlag5=0;
+        }
         break;
     case 4:
-        month = (month+1)%12;
+        if((month+1) == 13)
+        {
+            carryFlag4 = 1;
+        }
+        month=(month+1)%13;
+        carryFlag4=0;
+        // 年份进位
+        if(carryFlag5==1){
+            year=(year+1)%100;
+            carryFlag5=0;
+        }
+        break;
+    case 5:
+        year=(year+1)%100;
+        carryFlag5=0;
         break;
     default:
         break;
@@ -294,67 +1278,169 @@ void showTime(void){
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[hour/10]);	//write port 1				
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<0);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    Delay(5000);
+
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[hour%10]);	//write port 1				
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<1);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    Delay(5000);
+
     //显示”-”
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1				
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<2);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms	
+    Delay(5000);
+	
     //显示分钟
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[minute/10]);	//write port 1				
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<3);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    Delay(5000);
+
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[minute%10]);	//write port 1				
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<4);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    Delay(5000);
+
     //显示”-”
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1			
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<5);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    Delay(5000);
+
     //显示秒钟
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[second/10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[second/10]);	//write port 1
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<6);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    Delay(5000);
+
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[second%10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[second%10]);	//write port 1	
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<7);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    Delay(5000);
+
 }
 
 void showDate(void){
     uint8_t result;
-    //显示月份
+    //显示年
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[year/1000]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<0);			//write port 2
+    Delay(5000);
+
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[year/100]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<1);			//write port 2
+    Delay(5000);
+
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[year/10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<2);			//write port 2
+    Delay(5000);
+
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[year%10]);	//write port 1				
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<3);			//write port 2
+    Delay(5000);
+
+    //显示月
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[(month+1)/10]);	//write port 1				
-    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<3);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
-    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[(1+month)%10]);	//write port 1				
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<4);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
-    //显示”-”
+    Delay(5000);
+
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1			
+    result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[(1+month)%10]);	//write port 1			
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<5);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
-    //显示日期
+    Delay(5000);
+
+    //显示日
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[(1+day)/10]);	//write port 1				
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<6);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    Delay(5000);
+
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[(1+day)%10]);	//write port 1				
     result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<7);			//write port 2
-    SysCtlDelay(ui32SysClock/1500); //延时2ms
+    Delay(5000);
+
 }
+
+void setTime(char* str)
+{
+	char Hour[2];
+    char Minute[2];
+    char Second[2];
+    strncpy(Hour,str,2);
+    strncpy(Minute,str+3,2);
+    strncpy(Second,str+6,2);
+    hour=atoi(Hour);
+    minute=atoi(Minute);
+    second=atoi(Second);
+}
+void setDate(char* str)
+{
+    char Hour[4];char Minute[2];char Second[2];
+    strncpy(Hour,str,4);
+    strncpy(Minute,str+5,2);
+    strncpy(Second,str+8,2);
+    year=atoi(Hour);
+    month=atoi(Minute);
+    day=atoi(Second);
+}
+void setAlarm(char* str)
+{
+    char Hour[2];char Minute[2];char Second[2];
+    strncpy(Hour,str,2);
+    strncpy(Minute,str+3,2);
+    strncpy(Second,str+6,2);
+    setHour=atoi(Hour);
+    setMinute=atoi(Minute);
+    setSecond=atoi(Second);
+}
+void setCountDown(char* str)
+{
+    char Hour[2];
+    char Minute[2];
+    strncpy(Hour,str,2);
+    strncpy(Minute,str+3,2);
+    countdown_value=atoi(Hour)*100+atoi(Minute);
+}
+
+void transDate(char* str)
+{
+	sprintf(str,"%04u%s%02u%s%02u",year,"-",month,"-",day);   
+	str[12]='\0';
+}
+
+void transTime(char* str)
+{
+	sprintf(str,"%02u%s%02u%s%02u",hour,":",minute,":",second);   
+	str[12]='\0';
+}
+
+void transAlarm(char* str)
+{
+	sprintf(str,"%02u%s%02u%s%02u",setHour,":",setMinute,":",setSecond);   
+	str[12]='\0';
+}
+
+void Alarm_time(){   //闹钟设定跳动，进位
+    if(setSecond>=60){
+        setSecond=0;
+        setMinute++;
+    }
+    if(setMinute>=60){
+        setMinute=0;
+        setHour++;
+    }
+    if(setHour>=24){
+        setHour=0;
+    }
+}
+
 
 //------------- System Clock -------------------
 void S800_Clock_Init(void)
@@ -374,23 +1460,53 @@ void S800_GPIO_Init(void)
 {
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);						//Enable PortF
 	while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF));			//Wait for the GPIO moduleF ready
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOJ);						//Enable PortJ	
-	while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOJ));			//Wait for the GPIO moduleJ ready	
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);						//Enable PortN	
-	while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPION));			//Wait for the GPIO moduleN ready		
-	
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOJ);						//Enable PortJ
+	while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOJ));			//Wait for the GPIO moduleJ ready
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);						//Enable PortN
+	while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPION)){};			//Wait for the GPIO moduleN ready
   GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_0);			//Set PF0 as Output pin
-  GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_0 | GPIO_PIN_1);			//Set PN0,PN1 as Output pin
-
+	GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1);
+	GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);
+	GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_3);
+  GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_0);			//Set PN0 as Output pin
+  GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_1);			//Set PN1 as Output pin
+  GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_2);
 	GPIOPinTypeGPIOInput(GPIO_PORTJ_BASE,GPIO_PIN_0 | GPIO_PIN_1);//Set the PJ0,PJ1 as input pin
 	GPIOPadConfigSet(GPIO_PORTJ_BASE,GPIO_PIN_0 | GPIO_PIN_1,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
-    //设置PJ0下降沿触发
-	GPIOIntTypeSet(GPIO_PORTJ_BASE, GPIO_PIN_0, GPIO_FALLING_EDGE);
-	//使能PJ0中断
-	GPIOIntEnable(GPIO_PORTJ_BASE, GPIO_PIN_0);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOK);						//Enable PortK
+  GPIOPinTypeGPIOOutput(GPIO_PORTK_BASE, GPIO_PIN_5);			//Set PK5 as Output pin
+
+	GPIOPadConfigSet(GPIO_PORTK_BASE,GPIO_PIN_5,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
+	// 使能中断
+	//设置PJ0,PJ1下降沿触发
+	GPIOIntTypeSet(GPIO_PORTJ_BASE, GPIO_PIN_0|GPIO_PIN_1, GPIO_FALLING_EDGE);
+	//使能PJ0,PJ1中断
+	GPIOIntEnable(GPIO_PORTJ_BASE, GPIO_PIN_0|GPIO_PIN_1);
 	//使能PJ口中断
 	IntEnable(INT_GPIOJ);
 }
+
+// void S800_GPIO_Init(void)
+// {
+// 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);						//Enable PortF
+// 	while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOF));			//Wait for the GPIO moduleF ready
+// 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOJ);						//Enable PortJ	
+// 	while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOJ));			//Wait for the GPIO moduleJ ready	
+// 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPION);						//Enable PortN	
+// 	while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPION));			//Wait for the GPIO moduleN ready		
+	
+//   GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_0);			//Set PF0 as Output pin
+//   GPIOPinTypeGPIOOutput(GPIO_PORTN_BASE, GPIO_PIN_0 | GPIO_PIN_1);			//Set PN0,PN1 as Output pin
+
+// 	GPIOPinTypeGPIOInput(GPIO_PORTJ_BASE,GPIO_PIN_0 | GPIO_PIN_1);//Set the PJ0,PJ1 as input pin
+// 	GPIOPadConfigSet(GPIO_PORTJ_BASE,GPIO_PIN_0 | GPIO_PIN_1,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
+//     //设置PJ0下降沿触发
+// 	GPIOIntTypeSet(GPIO_PORTJ_BASE, GPIO_PIN_0, GPIO_FALLING_EDGE);
+// 	//使能PJ0中断
+// 	GPIOIntEnable(GPIO_PORTJ_BASE, GPIO_PIN_0);
+// 	//使能PJ口中断
+// 	IntEnable(INT_GPIOJ);
+// }
 
 //-------------- I2C ------------------
 void S800_I2C0_Init(void)
@@ -479,7 +1595,8 @@ void S800_SysTick_Init(void)
 */
 void SysTick_Handler(void)
 {
-    if (systick_100ms_couter == 0) //利用1ms的SysTick产生100ms的定时器
+	msCounter=(msCounter+1)%1000;
+	if (systick_100ms_couter == 0) //利用1ms的SysTick产生100ms的定时器
 	{
 		systick_100ms_couter = 100;
 		systick_100ms_status = 1;
@@ -494,54 +1611,24 @@ void SysTick_Handler(void)
 	}
 	else
 		systick_10ms_couter--;
-    // 按键下的功能选择
-    uint8_t SW = I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
-
 	
-	if (SW&1)   //按键1
+	if (systick_1ms_couter	== 0) //利用1ms的SysTick产生1ms的定时器
+	{
+		
+		systick_1ms_couter	 = 1;
+		systick_1ms_status  = 1;
+	}
+	else
+		systick_1ms_couter--;
+	
+	if (GPIOPinRead(GPIO_PORTJ_BASE,GPIO_PIN_0) == 0)
 	{
 		systick_100ms_status	= systick_10ms_status = 0; //阻止任务1和2的调度
-        functionChoice = 0;
 		GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,GPIO_PIN_0);		//点亮PN0
 	}
-    else if(SW&2)   //按键2
-    {
-        systick_100ms_status	= systick_10ms_status = 0; //阻止任务1和2的调度
-        functionChoice = 1;
-        GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,GPIO_PIN_0);		//点亮PN0
-    }
-    else if(SW&4){  //按键3
-        systick_100ms_status	= systick_10ms_status = 0; //阻止任务1和2的调度
-        functionChoice = 2;
-        GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,GPIO_PIN_0);		//点亮PN0
-    }
-    else if(SW&8){  //按键4——关闭闹钟
-        systick_100ms_status	= systick_10ms_status = 0; //阻止任务1和2的调度
-        clockFlag = 0;
-    }
-    else if(SW&16){
-        // 调最右边的LED
-        if(functionChoice==0){
-            timeUpdate(0);
-        }
-        if(functionChoice==1){
-            timeUpdate(3)
-        }
-    }
-    else if(SW&32){
-        // 调中间的LED
-        if(functionChoice==0){
-            timeUpdate(1);
-        }
-        if(functionChoice==1){
-            timeUpdate(4)
-        }
-    }
-    else if(SW&64){
-        if(functionChoice==0){
-            timeUpdate(2);
-        }
-    }
+	else
+		GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,0);		//熄灭PN0
+
 }
 
 //----------- UART ---------------------
@@ -565,6 +1652,20 @@ void S800_UART_Init(void)
 	IntEnable(INT_UART0);
 	
 	UARTStringPut("\r\nHello, world!\r\n");
+    UARTStringPut((uint8_t *)"\n\n");
+	UARTStringPut((uint8_t *)"\n     111111111111  111          1111   1111             1111    ");
+	UARTStringPut((uint8_t *)"\n          11       11111      111111   1111             1111    ");
+	UARTStringPut((uint8_t *)"\n          11       111111    1111111   1111             1111    ");
+	UARTStringPut((uint8_t *)"\n          11       11111111111111111   1111             1111    ");
+	UARTStringPut((uint8_t *)"\n          11       11   11111     11   1111             1111    ");
+	UARTStringPut((uint8_t *)"\n          11       11    111      11   111111111111111111111    ");
+	UARTStringPut((uint8_t *)"\n          11       11             11   111111111111111111111    ");
+	UARTStringPut((uint8_t *)"\n          11       11             11   1111             1111    ");
+	UARTStringPut((uint8_t *)"\n     11   11       11             11   1111             1111    ");
+	UARTStringPut((uint8_t *)"\n     111  11       11             11   1111             1111    ");
+	UARTStringPut((uint8_t *)"\n       11111       11             11   1111             1111    ");
+	UARTStringPut((uint8_t *)"\n        11         11             11   1111             1111    ");
+	UARTStringPut((uint8_t *)"\n\n");
 }
 
 void UARTStringPut(const char *cMessage)
@@ -582,6 +1683,8 @@ void UARTStringPutNonBlocking(const char *cMessage)
 /*
 	Corresponding to the startup_TM4C129.s vector table UART0_Handler interrupt program name
 */
+
+
 void UART0_Handler(void)
 {
 	int32_t uart0_int_status;
@@ -598,9 +1701,9 @@ void UART0_Handler(void)
 			uart_receive_char[k++] = UARTCharGetNonBlocking(UART0_BASE);	//若接受到的字符为小写字母，则将其转换为大写字母后再存储，以保证对大小写的适应性
 		}
 		
-		if(uart_receive_char[k-1] == '@')	//若接收到结束标记@
+		if(uart_receive_char[k-1] == '$')	//若接收到结束标记$
 		{
-			uart_receive_char[k-1] = '\0';	//去除结束标记@
+			uart_receive_char[k-1] = '\0';	//去除结束标记$
 			uart_receive_status = 1;	//只有当PC端所发送字符串的所有字符都接收到了才将接收标志置1
 			k = 0;
 		}
@@ -609,13 +1712,38 @@ void UART0_Handler(void)
 }
 void GPIOJ_Handler(void) 	//PortJ中断处理
 {
+	char timeChar[20];
 	unsigned long intStatus;
+	int gapTime[2];
 
 	intStatus = GPIOIntStatus(GPIO_PORTJ_BASE, true); //获取中断状态
 	SysCtlDelay(ui32SysClock / 150); //delay 20ms 以消抖
 	GPIOIntClear(GPIO_PORTJ_BASE, intStatus );  //清除中断请求信号
 
-	if (intStatus & GPIO_PIN_0) {	//PJ0触发中断
-	    SW_cnt = SW_cnt % 4 + 1;
+	if (intStatus & GPIO_PIN_0) {	//PJ0触发中断,开始计数
+	    pressStart[0]=second;
+		pressStart[1]=msCounter;
+		PJPressed=1;
+	}
+	if (intStatus & GPIO_PIN_1) {	//PJ1触发中断,停止计数
+		if(PJPressed){
+			PJPressed=0;
+			pressEnd[0]=second;
+			pressEnd[1]=msCounter;
+			gapTime[0]=pressEnd[0]-pressStart[0];
+			gapTime[1]=pressEnd[1]-pressStart[1];
+			if(gapTime[1]<0)	//若msCounter溢出
+			{
+				gapTime[0]--;
+				gapTime[1]+=1000;
+			}
+			sprintf(timeChar,"StartTime%02d:%03d\n",pressStart[0],pressStart[1]);
+			UARTStringPut(timeChar);
+			sprintf(timeChar,"EndTime%02d:%03d\n",pressEnd[0],pressEnd[1]);
+			UARTStringPut(timeChar);
+			sprintf(timeChar,"GapTime%02d:%03d\n",gapTime[0],gapTime[1]);
+			UARTStringPut(timeChar);
+		}
+
 	}
 }
