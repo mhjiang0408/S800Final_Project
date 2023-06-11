@@ -145,15 +145,15 @@ char str4[8];
 //       Dp  g  f  e  d  c  b  a
 	
 //systick software counter define
-volatile uint16_t systick_1ms_couter=0, systick_10ms_couter=0, systick_100ms_couter=0; //10ms和100ms计时器
-volatile uint8_t	systick_1ms_status=0,systick_10ms_status=0, systick_100ms_status=0; //10ms和100ms计时状态
+volatile uint16_t systick_1ms_couter=0, systick_10ms_couter=0, systick_100ms_couter=0; //10ms??100ms???±?÷
+volatile uint8_t	systick_1ms_status=0,systick_10ms_status=0, systick_100ms_status=0; //10ms??100ms???±×???
 
 volatile uint8_t uart_receive_status = 0;
 //------------- Defininition Finished ----------
 
 int main(void)
 {
-	IntMasterDisable();	//关中断
+	IntMasterDisable();	//??????
 
 	S800_Clock_Init();
 	S800_GPIO_Init();
@@ -161,7 +161,7 @@ int main(void)
 	S800_SysTick_Init();
 	S800_UART_Init();
 	
-	IntMasterEnable();	//开中断	
+	IntMasterEnable();	//??????	
 	
 	BootAnimation();
 	
@@ -269,22 +269,22 @@ uint8_t I2C0_ReadByte(uint8_t DevAddr, uint8_t RegAddr)
 {
 	uint8_t value;
 
-	while(I2CMasterBusy(I2C0_BASE)){};	//忙等待
-	I2CMasterSlaveAddrSet(I2C0_BASE, DevAddr, false); //设从机地址，写
-	I2CMasterDataPut(I2C0_BASE, RegAddr); //设数据地址
-	I2CMasterControl(I2C0_BASE,I2C_MASTER_CMD_SINGLE_SEND); //启动总线发送
+	while(I2CMasterBusy(I2C0_BASE)){};	//??????
+	I2CMasterSlaveAddrSet(I2C0_BASE, DevAddr, false); //?è???ú???·????
+	I2CMasterDataPut(I2C0_BASE, RegAddr); //?è???????·
+	I2CMasterControl(I2C0_BASE,I2C_MASTER_CMD_SINGLE_SEND); //????×???·???
 	while(I2CMasterBusBusy(I2C0_BASE));
 	if (I2CMasterErr(I2C0_BASE) != I2C_MASTER_ERR_NONE)
-		return 0; //错误
+		return 0; //?í?ó
 	Delay(100);
 
 	//receive data
-	I2CMasterSlaveAddrSet(I2C0_BASE, DevAddr, true); //设从机地址，读
-	I2CMasterControl(I2C0_BASE,I2C_MASTER_CMD_SINGLE_RECEIVE); //启动总线接收
+	I2CMasterSlaveAddrSet(I2C0_BASE, DevAddr, true); //?è???ú???·????
+	I2CMasterControl(I2C0_BASE,I2C_MASTER_CMD_SINGLE_RECEIVE); //????×???????
 	while(I2CMasterBusBusy(I2C0_BASE));
 	value=I2CMasterDataGet(I2C0_BASE);
 	if (I2CMasterErr(I2C0_BASE) != I2C_MASTER_ERR_NONE)
-		return 0; //错误
+		return 0; //?í?ó
 	Delay(100);
 
 	return value;
@@ -310,7 +310,7 @@ void S800_SysTick_Init(void)
 */
 void SysTick_Handler(void)
 {
-	if (systick_100ms_couter == 0) //利用1ms的SysTick产生100ms的定时器
+	if (systick_100ms_couter == 0) //????1ms??SysTick?ú?ú100ms???¨?±?÷
 	{
 		systick_100ms_couter = 100;
 		systick_100ms_status = 1;
@@ -318,7 +318,7 @@ void SysTick_Handler(void)
 	else
 		systick_100ms_couter--;
 	
-	if (systick_10ms_couter	== 0) //利用1ms的SysTick产生10ms的定时器
+	if (systick_10ms_couter	== 0) //????1ms??SysTick?ú?ú10ms???¨?±?÷
 	{
 		systick_10ms_couter	 = 10;
 		systick_10ms_status  = 1;
@@ -326,7 +326,7 @@ void SysTick_Handler(void)
 	else
 		systick_10ms_couter--;
 	
-		if (systick_1ms_couter	== 0) //利用1ms的SysTick产生1ms的定时器
+		if (systick_1ms_couter	== 0) //????1ms??SysTick?ú?ú1ms???¨?±?÷
 	{
 		systick_1ms_couter	 = 1;
 		systick_1ms_status  = 1;
@@ -336,11 +336,11 @@ void SysTick_Handler(void)
 	
 	if (GPIOPinRead(GPIO_PORTJ_BASE,GPIO_PIN_0) == 0)
 	{
-		systick_100ms_status	= systick_10ms_status = 0; //阻止任务1和2的调度
-		GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,GPIO_PIN_0);		//点亮PN0
+		systick_100ms_status	= systick_10ms_status = 0; //×è??????1??2???÷??
+		GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,GPIO_PIN_0);		//????PN0
 	}
 	else
-		GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,0);		//熄灭PN0
+		GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,0);		//?¨??PN0
 
 }
 
@@ -390,7 +390,7 @@ void UART0_Handler(void)
   uart0_int_status = UARTIntStatus(UART0_BASE, true);			// Get the interrrupt status.
   UARTIntClear(UART0_BASE, uart0_int_status);							//Clear the asserted interrupts
 
-	if (uart0_int_status & (UART_INT_RX | UART_INT_RT)) 	//接收或接收超时
+	if (uart0_int_status & (UART_INT_RX | UART_INT_RT)) 	//?????ò???????±
 	{
 		uart_receive_status = 1;
 	}
@@ -408,7 +408,7 @@ void S800_QEI_Init(void)
 
 	GPIOPinConfigure(GPIO_PL1_PHA0);
   GPIOPinConfigure(GPIO_PL2_PHB0);
-	//software patch to force the PL3 to low voltage, 即引脚C（接PL3）必须接地
+	//software patch to force the PL3 to low voltage, ??????C?¨??PL3??±???????
 	GPIOPinTypeGPIOOutput(GPIO_PORTL_BASE, GPIO_PIN_3);			
 	GPIOPinWrite(GPIO_PORTL_BASE, GPIO_PIN_3,0);	
   
@@ -474,58 +474,58 @@ void BootAnimation(void)
 	{
 	  while(count1<1000)
 	  {
-		  if (systick_1ms_status) //1ms定时到
+		  if (systick_1ms_status) //1ms?¨?±??
 		  {
-				systick_1ms_status	= 0; //重置1ms定时状态
+				systick_1ms_status	= 0; //????1ms?¨?±×???
 				flag = flag%8+1;
 				I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x00);
 					
 				//Welcome sentence:"HELLO,FH"
 				if(flag==1)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,segWel[0]);	//write port 1:"H" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1);				//write port 2
 					}
 				if(flag==2)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,segWel[1]);	//write port 1:"E" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,2);				//write port 2
 					}
 				if(flag==3)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,segWel[2]);	//write port 1:"L" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,4);				//write port 2
 					}
 				if(flag==4)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,segWel[2]);	//write port 1:"L" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,8);				//write port 2
 					}
 				if(flag==5)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,segWel[3]);	//write port 1:"O" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,16);				//write port 2
 					}
 				if(flag==6)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,segWel[4]);	//write port 1:"," 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,32);				//write port 2
 					}
 				if(flag==7)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,segWel[5]);	//write port 1:"F" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,64);				//write port 2
 					}
 				if(flag==8)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,segWel[0]);	//write port 1:"H" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,128);				//write port 2
 					}
@@ -533,7 +533,7 @@ void BootAnimation(void)
 				}
 		}
 		count1=0;
-		I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+		I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 		I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0xff);
     // BootMusic();
 		//SysCtlDelay(ui32SysClock/3); //1s
@@ -547,56 +547,56 @@ void BootAnimation(void)
 				//StudentCode:520021910596
 				if(flag==1)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[2]);	//write port 1:"2" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1);				//write port 2
 					}
 				if(flag==2)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[1]);	//write port 1:"1" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,2);				//write port 2
 					}
 				if(flag==3)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[9]);	//write port 1:"9" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,4);				//write port 2
 					}
 				if(flag==4)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[1]);	//write port 1:"1" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,8);				//write port 2
 					}
 				if(flag==5)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[0]);	//write port 1:"0" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,16);				//write port 2
 					}
 				if(flag==6)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[5]);	//write port 1:"5" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,32);				//write port 2
 					}
 				if(flag==7)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[9]);	//write port 1:"9" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,64);				//write port 2
 					}
 				if(flag==8)
 					{
-						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[6]);	//write port 1:"6" 					
 						I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,128);				//write port 2
 					}
 					count2++;
 				}
 		}
-		I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+		I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 		I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0xff);
 		SysCtlDelay(ui32SysClock/3); //1s
 	}
@@ -648,49 +648,49 @@ void ClockDisplay(void)
 			//Clock:h1h2-m1m2-s1s2
 			if(flag1==1)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[h1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1);				//write port 2
 				}
 			if(flag1==2)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[h2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,2);				//write port 2
 				}
 			if(flag1==3)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,4);				//write port 2
 				}
 			if(flag1==4)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[m1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,8);				//write port 2
 				}
 			if(flag1==5)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[m2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,16);				//write port 2
 				}
 			if(flag1==6)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,32);				//write port 2
 				}
 			if(flag1==7)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[s1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,64);				//write port 2
 				}
 			if(flag1==8)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[s2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,128);				//write port 2
 				}
@@ -733,49 +733,49 @@ void CanlendarDisplay(void)
 			//Canlendar:year-month-day
 			if(flag1==1)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[y1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1);				//write port 2
 				}
 			if(flag1==2)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[y2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,2);				//write port 2
 				}
 			if(flag1==3)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[y3]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,4);				//write port 2
 				}
 			if(flag1==4)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[y4]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,8);				//write port 2
 				}
 			if(flag1==5)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[mo1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,16);				//write port 2
 				}
 			if(flag1==6)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[mo2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,32);				//write port 2
 				}
 			if(flag1==7)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[d1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,64);				//write port 2
 				}
 			if(flag1==8)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[d2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,128);				//write port 2
 				}
@@ -910,49 +910,49 @@ void AlarmDisplay(void)
 			//Alarm:clkh1clkh2-clkm1clkm2-clks1clks2
 			if(flag2==1)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[clkh1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1);				//write port 2
 				}
 			if(flag2==2)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[clkh2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,2);				//write port 2
 				}
 			if(flag2==3)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,4);				//write port 2
 				}
 			if(flag2==4)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[clkm1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,8);				//write port 2
 				}
 			if(flag2==5)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[clkm2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,16);				//write port 2
 				}
 			if(flag2==6)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,32);				//write port 2
 				}
 			if(flag2==7)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[clks1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,64);				//write port 2
 				}
 			if(flag2==8)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[clks2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,128);				//write port 2
 				}
@@ -967,49 +967,49 @@ void AlarmDisplay(void)
 			//Alarm initialed:--------
 			if(flag2==1)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1);				//write port 2
 				}
 			if(flag2==2)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,2);				//write port 2
 				}
 			if(flag2==3)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,4);				//write port 2
 				}
 			if(flag2==4)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,8);				//write port 2
 				}
 			if(flag2==5)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,16);				//write port 2
 				}
 			if(flag2==6)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,32);				//write port 2
 				}
 			if(flag2==7)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,64);				//write port 2
 				}
 			if(flag2==8)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,128);				//write port 2
 				}
@@ -1266,49 +1266,49 @@ void TimerDisplay(void)
 			//Timer:l1l2l3l4.r1r2S
 			if(flag2==1)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[l1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1);				//write port 2
 				}
 			if(flag2==2)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[l2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,2);				//write port 2
 				}
 			if(flag2==3)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[l3]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,4);				//write port 2
 				}
 			if(flag2==4)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[l4]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,8);				//write port 2
 				}
 			if(flag2==5)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x80);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,16);				//write port 2
 				}
 			if(flag2==6)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[r1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,32);				//write port 2
 				}
 			if(flag2==7)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[r2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,64);				//write port 2
 				}
 			if(flag2==8)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[5]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,128);				//write port 2
 				}
@@ -1325,49 +1325,49 @@ void AuthorDisplay(void)
 			//author:by FanHao
 			if(flag2==1)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,author[0]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1);				//write port 2
 				}
 			if(flag2==2)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,author[1]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,2);				//write port 2
 				}
 			if(flag2==3)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,author[2]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,4);				//write port 2
 				}
 			if(flag2==4)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,author[3]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,8);				//write port 2
 				}
 			if(flag2==5)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,author[4]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,16);				//write port 2
 				}
 			if(flag2==6)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,author[5]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,32);				//write port 2
 				}
 			if(flag2==7)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,author[6]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,64);				//write port 2
 				}
 			if(flag2==8)
 				{
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2??0
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,author[7]);	//write port 1 					
 					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,128);				//write port 2
 				}
