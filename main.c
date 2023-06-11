@@ -441,10 +441,10 @@ void Display_alarm(){   //闹钟显示
 	I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0xa0);
 	alarm_value[0]=setHour/10;
 	alarm_value[1]=setHour%10;
-	alarm_value[2]=17;    //显示中间横杆
+	alarm_value[2]=0x40;    //显示中间横杆
 	alarm_value[3]=setMinute/10;
 	alarm_value[4]=setMinute%10;
-	alarm_value[5]=17;   //显示中间横杠
+	alarm_value[5]=0x40;   //显示中间横杠
 	alarm_value[6]=setSecond/10;
 	alarm_value[7]=setSecond%10;
 	for(t3=0;t3<8;t3++){
@@ -1353,20 +1353,20 @@ void SysTick_Handler(void)
 void S800_UART_Init(void)
 {
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
-  SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);						//Enable PortA
+ 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);						//Enable PortA
 	while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOA));			//Wait for the GPIO moduleA ready
 
 	GPIOPinConfigure(GPIO_PA0_U0RX);												// Set GPIO A0 and A1 as UART pins.
-  GPIOPinConfigure(GPIO_PA1_U0TX);    			
+  	GPIOPinConfigure(GPIO_PA1_U0TX);    			
 
-  GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+  	GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
 
 	// Configure the UART for 115,200, 8-N-1 operation.
-  UARTConfigSetExpClk(UART0_BASE, ui32SysClock,115200,(UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |UART_CONFIG_PAR_NONE));
+  	UARTConfigSetExpClk(UART0_BASE, ui32SysClock,115200,(UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |UART_CONFIG_PAR_NONE));
 
 	UARTFIFOLevelSet(UART0_BASE,UART_FIFO_TX2_8,UART_FIFO_RX4_8);//set FIFO Level
 
-  UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);	//Enable UART0 RX,TX interrupt
+  	UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);	//Enable UART0 RX,TX interrupt
 	IntEnable(INT_UART0);
 	
 	UARTStringPut("\r\nHello, world!\r\n");

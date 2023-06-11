@@ -222,3 +222,30 @@ if(old_key&0x01)
 ```
 
 ### 项目难点
+1. 在程序中需要频繁用到时间的进位，如果全部放置于各函数体内部会非常臃肿，因此设计专门的时间更新函数`timeUpdate`来进行时间进位；
+2. 由于模式切换，在初始版本中会出现数码管频繁闪动，经过研究发现是由于按键选择时不够稳定，造成在模式间不断跳跃。因此，我增加了在按键检测中的延时，从而使得按键更加稳定（相关核心代码见项目亮点2）
+3. 前序相关Lab中由于while主循环的存在，数码管显示部分我通常是一次性列出所有的数码管，利用while循环来进行显示。但由于本项目需要进行模块化，因此上述方法不能使用。经过研究，我引入显示value数组和for循环来进行显示。以时间显示为例，首先将待输出数据整合进数组`time_value`，利用for循环，在循环中循环输出一遍数码管。由于外部while是每1ms刷新一次，因此可以不断重复访问该函数，实现循环输出以视觉暂留的效果。
+
+```cpp
+void Display_time(){    //时间显示
+    uint8_t time_value[8];
+    uint8_t y2=0x0;
+	I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x55);
+	time_value[0]=hour/10;
+	time_value[1]=hour%10;
+	time_value[2]=0x40;    //显示中间横杆
+	time_value[3]=minute/10;
+	time_value[4]=minute%10;
+	time_value[5]=0x40;   //显示中间横杠
+	time_value[6]=second/10;
+	time_value[7]=second%10;
+	for(t2=0;t2<8;t2++)
+	{
+		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+		if(t2==2||t2==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
+		else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[time_value[t2]]);                                                 		//write port 1                                             		//write port 1
+		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t2);
+		Delay(1000);
+	}		
+}
+```
