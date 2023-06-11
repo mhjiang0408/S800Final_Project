@@ -97,7 +97,7 @@ I (.\driverlib\systick.h)(0x6445F4A0)
 I (.\driverlib\interrupt.h)(0x6445F4A0)
 I (.\driverlib\uart.h)(0x6445F4A0)
 I (.\inc\hw_ints.h)(0x6445F4A1)
-F (.\main.c)(0x6482EFE6)(-c --cpu Cortex-M4.fp -D__EVAL -g -O0 --apcs=interwork --split_sections -I .\driverlib -I .\inc-IF:\2023_spring\S800\S800Final_Project\RTE\_Target_1-II:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include-II:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129-D__UVISION_VERSION="522" -D_RTE_ -DTM4C1294NCPDT -DPART_TM4C1294NCPDT-o .\objects\main.o --omf_browse .\objects\main.crf --depend .\objects\main.d)
+F (.\main.c)(0x6485B6A2)(-c --cpu Cortex-M4.fp -D__EVAL -g -O0 --apcs=interwork --split_sections -I .\driverlib -I .\inc-IF:\2023_spring\S800\S800Final_Project\RTE\_Target_1-II:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include-II:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129-D__UVISION_VERSION="522" -D_RTE_ -DTM4C1294NCPDT -DPART_TM4C1294NCPDT-o .\objects\main.o --omf_browse .\objects\main.crf --depend .\objects\main.d)
 I (I:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F606B8)
 I (I:\Keil_v5\ARM\ARMCC\include\stdbool.h)(0x57F606B8)
 I (I:\Keil_v5\ARM\ARMCC\include\ctype.h)(0x57F606B6)
@@ -114,6 +114,26 @@ I (.\driverlib\systick.h)(0x6445F4A0)
 I (.\driverlib\interrupt.h)(0x6445F4A0)
 I (.\driverlib\uart.h)(0x6445F4A0)
 I (.\inc\hw_ints.h)(0x6445F4A1)
+F (.\FinalWork.c)(0x64857169)(-c --cpu Cortex-M4.fp -D__EVAL -g -O0 --apcs=interwork --split_sections -I .\driverlib -I .\inc-IF:\2023_spring\S800\S800Final_Project\RTE\_Target_1-II:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include-II:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129-D__UVISION_VERSION="522" -D_RTE_ -DTM4C1294NCPDT -DPART_TM4C1294NCPDT-o .\objects\finalwork.o --omf_browse .\objects\finalwork.crf --depend .\objects\finalwork.d)
+I (I:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F606B8)
+I (I:\Keil_v5\ARM\ARMCC\include\string.h)(0x57F606B8)
+I (I:\Keil_v5\ARM\ARMCC\include\stdbool.h)(0x57F606B8)
+I (I:\Keil_v5\ARM\ARMCC\include\stdio.h)(0x57F606B8)
+I (I:\Keil_v5\ARM\ARMCC\include\stdlib.h)(0x57F606B8)
+I (.\inc\hw_memmap.h)(0x6445F4A1)
+I (.\driverlib\debug.h)(0x6445F4A0)
+I (.\driverlib\gpio.h)(0x6445F4A0)
+I (.\inc\hw_i2c.h)(0x6445F4A1)
+I (.\inc\hw_types.h)(0x6445F4A1)
+I (.\driverlib\i2c.h)(0x6445F4A0)
+I (.\driverlib\pin_map.h)(0x6445F4A0)
+I (.\driverlib\sysctl.h)(0x6445F4A0)
+I (.\driverlib\systick.h)(0x6445F4A0)
+I (.\driverlib\interrupt.h)(0x6445F4A0)
+I (.\driverlib\uart.h)(0x6445F4A0)
+I (.\inc\hw_ints.h)(0x6445F4A1)
+I (.\inc\hw_qei.h)(0x6445F4A1)
+I (.\driverlib\qei.h)(0x6445F4A0)
 F (RTE\Device\TM4C1294NCPDT\startup_TM4C129.s)(0x51BFAA8A)(--cpu Cortex-M4.fp --pd "__EVAL SETA 1" -g --apcs=interwork -IF:\2023_spring\S800\S800Final_Project\RTE\_Target_1-II:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include-II:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129--pd "__UVISION_VERSION SETA 522" --pd "_RTE_ SETA 1" --pd "TM4C1294NCPDT SETA 1"--list .\listings\startup_tm4c129.lst --xref -o .\objects\startup_tm4c129.o --depend .\objects\startup_tm4c129.d)
 F (RTE\Device\TM4C1294NCPDT\system_TM4C129.c)(0x525357C4)(-c --cpu Cortex-M4.fp -D__EVAL -g -O0 --apcs=interwork --split_sections -I .\driverlib -I .\inc-IF:\2023_spring\S800\S800Final_Project\RTE\_Target_1-II:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include-II:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129-D__UVISION_VERSION="522" -D_RTE_ -DTM4C1294NCPDT -DPART_TM4C1294NCPDT-o .\objects\system_tm4c129.o --omf_browse .\objects\system_tm4c129.crf --depend .\objects\system_tm4c129.d)
 I (I:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F606B8)

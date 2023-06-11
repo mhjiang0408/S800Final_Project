@@ -22,42 +22,122 @@ Dialog DLL:      TCM.DLL V1.21.0.0
  
 <h2>Project:</h2>
 F:\2023_spring\S800\S800Final_Project\EXP1.uvprojx
-Project File Date:  06/02/2023
+Project File Date:  06/09/2023
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 4 (build 422)', folder: 'I:\Keil_v5\ARM\ARMCC\Bin'
 Rebuild target 'Target 1'
 assembling startup_TM4C129.s...
 compiling main.c...
-main.c(119): warning:  #223-D: function "sscanf" declared implicitly
-                  sscanf(uart_receive_char,"%3s%2s%1s%2s%1s%2s",command_char,hour_char,gap_char,minute_char,gap_char,second_char);	
-main.c(123): warning:  #223-D: function "sscanf" declared implicitly
-                  sscanf(uart_receive_char,"%s",command_char);
-main.c(127): warning:  #223-D: function "sscanf" declared implicitly
-                  sscanf(uart_receive_char,"%7s%1s",command_char,commandIndex);
-main.c(135): warning:  #223-D: function "atoi" declared implicitly
-                  hour = atoi(hour_char);
-main.c(139): warning:  #223-D: function "sprintf" declared implicitly
-                  sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
-main.c(144): warning:  #223-D: function "sprintf" declared implicitly
-                  sprintf(time_char,"TIME%02d:%02d:%02d",hour,minute,second);
-main.c(149): warning:  #223-D: function "sprintf" declared implicitly
-                  sprintf(time_char,"FUNCTIONSET%01d",commandIndex);
-main.c(85): warning:  #177-D: variable "month_char"  was declared but never referenced
+main.c(62): warning:  #1295-D: Deprecated declaration Alarmring - give arg types
+  void Alarmring();
+main.c(64): warning:  #1295-D: Deprecated declaration SWPressed - give arg types
+  void SWPressed();
+main.c(65): warning:  #1295-D: Deprecated declaration change_day - give arg types
+  void change_day();
+main.c(66): warning:  #1295-D: Deprecated declaration Uart_set - give arg types
+  void Uart_set();
+main.c(74): warning:  #1295-D: Deprecated declaration Alarm_time - give arg types
+  void Alarm_time();
+main.c(75): warning:  #1295-D: Deprecated declaration Display_date - give arg types
+  void Display_date();
+main.c(76): warning:  #1295-D: Deprecated declaration Display_time - give arg types
+  void Display_time();
+main.c(77): warning:  #1295-D: Deprecated declaration Display_alarm - give arg types
+  void Display_alarm();
+main.c(78): warning:  #1295-D: Deprecated declaration Display_countdown - give arg types
+  void Display_countdown();
+main.c(148): warning:  #177-D: variable "month_char"  was declared but never referenced
       char month_char[12][4] = {"JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
-main.c(86): warning:  #177-D: variable "num_char"  was declared but never referenced
+main.c(149): warning:  #177-D: variable "num_char"  was declared but never referenced
       char num_char[12][3] = {"00","01","02","03","04","05","06","07","08","09","10","11"};  
-main.c(297): warning:  #550-D: variable "result"  was set but never used
+main.c(152): warning:  #177-D: variable "time_char"  was declared but never referenced
+  	char time_char[10];
+main.c(155): warning:  #177-D: variable "hour_char"  was declared but never referenced
+  	char hour_char[3];
+main.c(156): warning:  #177-D: variable "minute_char"  was declared but never referenced
+  	char minute_char[3];
+main.c(157): warning:  #177-D: variable "second_char"  was declared but never referenced
+  	char second_char[3];
+main.c(159): warning:  #177-D: variable "uart_receive_char"  was declared but never referenced
+  	char uart_receive_char[8]; //存储PC端发来的“SET”、“INC”或“GETTIME”
+main.c(160): warning:  #177-D: variable "gap_char"  was declared but never referenced
+  	char gap_char[2];	//存储“-”或“：”
+main.c(462): warning:  #177-D: variable "y1"  was declared but never referenced
+      uint8_t y1=0x0;
+main.c(482): warning:  #177-D: variable "y2"  was declared but never referenced
+      uint8_t y2=0x0;
+main.c(504): warning:  #177-D: variable "y3"  was declared but never referenced
+      uint8_t y3=0x0;
+main.c(541): warning:  #175-D: subscript out of range
+  	countdown[7]=countdown_value%10;
+main.c(524): warning:  #177-D: variable "y4"  was declared but never referenced
+      uint8_t y4=0x0;
+main.c(940): warning:  #177-D: variable "kk1"  was declared but never referenced
+  			char *kk1="ERROR COMMANDS!\n";
+main.c(1015): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  			UARTStringPut((uint8_t *)"countdown");
+main.c(1016): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  			UARTStringPut((uint8_t *)uart_receive_char+10);
+main.c(1017): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  			UARTStringPut((uint8_t *)"s");
+main.c(1018): warning:  #223-D: function "atof" declared implicitly
+  			countdown_value=(atof(uart_receive_char+10)*100);
+main.c(1268): warning:  #550-D: variable "result"  was set but never used
       uint8_t result;
-main.c(337): warning:  #550-D: variable "result"  was set but never used
+main.c(1316): warning:  #550-D: variable "result"  was set but never used
       uint8_t result;
-main.c(402): warning:  #550-D: variable "result"  was set but never used
+main.c(1370): warning:  #223-D: function "atoi" declared implicitly
+      hour=atoi(Hour);
+main.c(1380): warning:  #223-D: function "atoi" declared implicitly
+      year=atoi(Hour);
+main.c(1390): warning:  #223-D: function "atoi" declared implicitly
+      setHour=atoi(Hour);
+main.c(1400): warning:  #223-D: function "atoi" declared implicitly
+      countdown_value=atoi(Hour)*100+atoi(Minute);
+main.c(1405): warning:  #223-D: function "sprintf" declared implicitly
+  	sprintf(str,"%04u%s%02u%s%02u",year,"-",month,"-",day);   
+main.c(1411): warning:  #223-D: function "sprintf" declared implicitly
+  	sprintf(str,"%02u%s%02u%s%02u",hour,":",minute,":",second);   
+main.c(1417): warning:  #223-D: function "sprintf" declared implicitly
+  	sprintf(str,"%02u%s%02u%s%02u",setHour,":",setMinute,":",setSecond);   
+main.c(1532): warning:  #550-D: variable "result"  was set but never used
   	uint8_t result;
-main.c: 12 warnings, 0 errors
+main.c(1673): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+      UARTStringPut((uint8_t *)"\n\n");
+main.c(1674): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n     111111111111  111          1111   1111             1111    ");
+main.c(1675): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n          11       11111      111111   1111             1111    ");
+main.c(1676): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n          11       111111    1111111   1111             1111    ");
+main.c(1677): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n          11       11111111111111111   1111             1111    ");
+main.c(1678): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n          11       11   11111     11   1111             1111    ");
+main.c(1679): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n          11       11    111      11   111111111111111111111    ");
+main.c(1680): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n          11       11             11   111111111111111111111    ");
+main.c(1681): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n          11       11             11   1111             1111    ");
+main.c(1682): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n     11   11       11             11   1111             1111    ");
+main.c(1683): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n     111  11       11             11   1111             1111    ");
+main.c(1684): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n       11111       11             11   1111             1111    ");
+main.c(1685): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n        11         11             11   1111             1111    ");
+main.c(1686): warning:  #167-D: argument of type "uint8_t *" is incompatible with parameter of type "const char *"
+  	UARTStringPut((uint8_t *)"\n\n");
+main.c(1758): warning:  #223-D: function "sprintf" declared implicitly
+  			sprintf(timeChar,"StartTime%02d:%03d\n",pressStart[0],pressStart[1]);
+main.c: 52 warnings, 0 errors
 compiling system_TM4C129.c...
 linking...
-Program Size: Code=8720 RO-data=2336 RW-data=60 ZI-data=620  
-".\Objects\EXP1.axf" - 0 Error(s), 12 Warning(s).
+Program Size: Code=19740 RO-data=3336 RW-data=236 ZI-data=1036  
+".\Objects\EXP1.axf" - 0 Error(s), 52 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -83,9 +163,9 @@ Package Vendor: Keil
    * Component: ARM::CMSIS:CORE:5.0.0
 
    * Component: Keil::Device:Startup:1.0.0
-      Include file:  Device\Include\TM4C129\TM4C129.h
       Source file:   Device\Source\ARM\startup_TM4C129.s
       Source file:   Device\Source\system_TM4C129.c
+      Include file:  Device\Include\TM4C129\TM4C129.h
 Build Time Elapsed:  00:00:00
 </pre>
 </body>
