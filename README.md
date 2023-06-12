@@ -173,39 +173,59 @@ void BootMusic(void)
 ```cpp
 while (1)
 {
-    Sw_status=~I2C0_ReadByte(TCA6424_I2CADDR, TCA6424_INPUT_PORT0);  //read the SW status
-    if (systick_100ms_status) //100ms
-    {
-        systick_100ms_status	= 0; //Reset 100ms
-        
-        if (++i2c_flash_cnt1		>= I2C_FLASHTIME/100)  //1s
-        {
-            i2c_flash_cnt1				= 0;
-            timeUpdate(0);
-        }
-    }
-    countdown_value%=9999;
-    Alarmring();
-    SWPressed();
-    Uart_set();
-    switch (functionChoice)
-    {
-    case 0:
-        Display_date();
-        break;
-    case 1:
-        Display_time();
-        break;
-    case 2:
-        Display_countdown();
-        break;
-    case 3:
-        Display_alarm();
-        break;
-    
-    default:
-        break;
-    }
+	if(PJPressed){
+		if(GPIOPinRead(GPIO_PORTJ_BASE,GPIO_PIN_1)){
+			PJPressed=0;
+			pressEnd[0]=second;
+			pressEnd[1]=msCounter;
+			gapTime[0]=pressEnd[0]-pressStart[0];
+			gapTime[1]=pressEnd[1]-pressStart[1];
+			if(gapTime[1]<0)	//若msCounter溢出
+			{
+				gapTime[0]--;
+				gapTime[1]+=1000;
+			}
+			sprintf(timeChar,"StartTime%02d:%03d\n",pressStart[0],pressStart[1]);
+			UARTStringPut(timeChar);
+			sprintf(timeChar,"EndTime%02d:%03d\n",pressEnd[0],pressEnd[1]);
+			UARTStringPut(timeChar);
+			sprintf(timeChar,"GapTime%02d:%03d\n",gapTime[0],gapTime[1]);
+			UARTStringPut(timeChar);
+		}
+	}
+	Sw_status=~I2C0_ReadByte(TCA6424_I2CADDR, TCA6424_INPUT_PORT0);  //read the SW status
+	if (systick_100ms_status) //100ms
+	{
+		systick_100ms_status	= 0; //Reset 100ms
+		
+		if (++i2c_flash_cnt1		>= I2C_FLASHTIME/100)  //1s
+		{
+			i2c_flash_cnt1				= 0;
+			timeUpdate(0);
+		}
+	}
+	countdown_value%=9999;
+	Alarmring();
+	SWPressed();
+	Uart_set();
+	switch (functionChoice)
+	{
+	case 0:
+		Display_date();
+		break;
+	case 1:
+		Display_time();
+		break;
+	case 2:
+		Display_countdown();
+		break;
+	case 3:
+		Display_alarm();
+		break;
+	
+	default:
+		break;
+	}
 }//end while
 ```
 3. 为最大限度利用蓝板上8个按键，本程序利用一个按键SW1来进行模式切换，同时在按键识别程序中均使用200ms的延时来进行按键消抖以实现更好的识别效果。
@@ -249,7 +269,7 @@ void Display_time(){    //时间显示
 	}		
 }
 ```
-4. 由于前期时钟未设置毫秒位，因此无法实现红板计时功能；为实现这一功能同时不重构整体时钟进位函数，我们在`SysTick_Handler(void)`函数中在1s计时之前使用毫秒计数器`msCounter`来计数毫秒位。由于秒位`second`的计数同样是在`SysTick_Handler(void)`函数中的1s标识，因此恰好可以契合1s计数和毫秒计数。
+4. 由于前期时钟未设置毫秒位，因此无法实现红板计时功能；为实现这一功能同时不重构整体时钟进位函数，我们在`SysTick_Handler(void)`函数中在1s计时之前使用毫秒计数器`msCounter`来计数毫秒位。由于秒位`second`的计数同样是在`SysTick_Handler(void)`函数中的1s标识，因此恰好可以契合1s计数和毫秒计数。同时，在主循环和GPIO中断中利用pressStart和pressEnd数组进行联系。
 ```cpp
 void SysTick_Handler(void)
 {

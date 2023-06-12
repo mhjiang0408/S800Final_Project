@@ -151,10 +151,10 @@ int main(void)
 {
 	volatile uint8_t commandIndex;
 	volatile uint16_t	i2c_flash_cnt_s=0;
+	int gapTime[2];
+	char timeChar[20];
 
     char num_char[12][3] = {"00","01","02","03","04","05","06","07","08","09","10","11"};  
-
-	char time_char[10];
 	
 	//分别存储PC端发来的时、分、秒
 	char hour_char[3];
@@ -176,6 +176,26 @@ int main(void)
 	AuthorDisplay();
     while (1)
     {
+		if(PJPressed){
+			if(GPIOPinRead(GPIO_PORTJ_BASE,GPIO_PIN_1)){
+				PJPressed=0;
+				pressEnd[0]=second;
+				pressEnd[1]=msCounter;
+				gapTime[0]=pressEnd[0]-pressStart[0];
+				gapTime[1]=pressEnd[1]-pressStart[1];
+				if(gapTime[1]<0)	//若msCounter溢出
+				{
+					gapTime[0]--;
+					gapTime[1]+=1000;
+				}
+				sprintf(timeChar,"StartTime%02d:%03d\n",pressStart[0],pressStart[1]);
+				UARTStringPut(timeChar);
+				sprintf(timeChar,"EndTime%02d:%03d\n",pressEnd[0],pressEnd[1]);
+				UARTStringPut(timeChar);
+				sprintf(timeChar,"GapTime%02d:%03d\n",gapTime[0],gapTime[1]);
+				UARTStringPut(timeChar);
+			}
+		}
 		Sw_status=~I2C0_ReadByte(TCA6424_I2CADDR, TCA6424_INPUT_PORT0);  //read the SW status
         if (systick_100ms_status) //100ms
 		{
@@ -1429,12 +1449,10 @@ void GPIOJ_Handler(void) 	//PortJ中断处理
 	SysCtlDelay(ui32SysClock / 150); //delay 20ms 以消抖
 	GPIOIntClear(GPIO_PORTJ_BASE, intStatus );  //清除中断请求信号
 
-	if (intStatus & GPIO_PIN_0) {	//PJ0触发中断,开始计数
-	    pressStart[0]=second;
-		pressStart[1]=msCounter;
-		PJPressed=1;
-	}
 	if (intStatus & GPIO_PIN_1) {	//PJ1触发中断,停止计数
+		PJPressed=1;
+		pressStart[0]=second;
+		pressStart[1]=msCounter;
 		if(PJPressed){
 			PJPressed=0;
 			pressEnd[0]=second;
