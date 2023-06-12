@@ -1338,15 +1338,6 @@ void SysTick_Handler(void)
 	}
 	else
 		systick_1ms_couter--;
-	
-	if (GPIOPinRead(GPIO_PORTJ_BASE,GPIO_PIN_0) == 0)
-	{
-		systick_100ms_status	= systick_10ms_status = 0; //阻止任务1和2的调度
-		GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,GPIO_PIN_0);		//点亮PN0
-	}
-	else
-		GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0,0);		//熄灭PN0
-
 }
 
 //----------- UART ---------------------

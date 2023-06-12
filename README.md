@@ -249,3 +249,34 @@ void Display_time(){    //时间显示
 	}		
 }
 ```
+4. 由于前期时钟未设置毫秒位，因此无法实现红板计时功能；为实现这一功能同时不重构整体时钟进位函数，我们在`SysTick_Handler(void)`函数中在1s计时之前使用毫秒计数器`msCounter`来计数毫秒位。由于秒位`second`的计数同样是在`SysTick_Handler(void)`函数中的1s标识，因此恰好可以契合1s计数和毫秒计数。
+```cpp
+void SysTick_Handler(void)
+{
+	msCounter=(msCounter+1)%1000;
+	if (systick_100ms_couter == 0) //利用1ms的SysTick产生100ms的定时器
+	{
+		systick_100ms_couter = 100;
+		systick_100ms_status = 1;
+	}
+	else
+		systick_100ms_couter--;
+	
+	if (systick_10ms_couter	== 0) //利用1ms的SysTick产生10ms的定时器
+	{
+		systick_10ms_couter	 = 10;
+		systick_10ms_status  = 1;
+	}
+	else
+		systick_10ms_couter--;
+	
+	if (systick_1ms_couter	== 0) //利用1ms的SysTick产生1ms的定时器
+	{
+		
+		systick_1ms_couter	 = 1;
+		systick_1ms_status  = 1;
+	}
+	else
+		systick_1ms_couter--;
+}
+```
