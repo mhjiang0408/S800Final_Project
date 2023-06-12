@@ -83,10 +83,12 @@ void Display_date();
 void Display_time();
 void Display_alarm();
 void Display_countdown();
+void BootMusic(void);
 
 
 
 uint8_t result;
+uint8_t upsidedown=0;
 int cnt=0;
 uint32_t ui32SysClock;
 uint8_t seg7[] = {0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f,0x77,0x7c,0x58,0x5e,0x079,0x71,0x5c};
@@ -136,7 +138,12 @@ volatile uint8_t carryFlag1 = 0, carryFlag2 = 0,carryFlag3=0,carryFlag4=0,carryF
 volatile uint8_t daysOfMonth[12] = {32,29,32,31,32,31,32,32,31,32,31,32}; //每月的天数
 volatile uint8_t clockFlag = 0;    //闹钟响应标志
 int audio=784;
-
+char const disp_7seg[] = {0x3F,0x06,0x5B,0x4F,0x66,0x6D,  
+												  0x7D,0x07,0x7F,0x6F,
+												  0x80,0x40,0x08,0x00};
+char const updown_disp_7seg[] = {0x3F,0x30,0x5B,0x79,0x74,0x6D,  
+																 0x6F,0x38,0x7F,0x7D,
+																 0x80,0x40,0x01,0x00};
 // 字符串存储
 
 char send_char[100]; //发出字符串
@@ -176,6 +183,24 @@ int main(void)
 	AuthorDisplay();
     while (1)
     {
+		if(upsidedown){
+			t1=7-t1;
+			t2=7-t2;
+			t3=7-t3;
+			t4=7-t4;
+			for(i=0;i<10;i++){
+				seg7[i]=updown_disp_7seg[i];
+			}
+		}
+		if(upsidedown==0){
+			t1=7-t1;
+			t2=7-t2;
+			t3=7-t3;
+			t4=7-t4;
+			for(i=0;i<10;i++){
+				seg7[i]=disp_7seg[i];
+			}
+		}
 		if(PJPressed){
 			if(GPIOPinRead(GPIO_PORTJ_BASE,GPIO_PIN_1)){
 				PJPressed=0;
@@ -267,29 +292,26 @@ void AuthorDisplay(void)
 	{
 	  while(count1<1000)
 	  {
-			if (systick_100ms_status) //100ms定时到
-			{
-				systick_100ms_status	= 0; //重置100ms定时状态
-				
-				if (++i2c_flash_cnt		>= I2C_FLASHTIME/100)  //5*100ms=500ms
-				{
-					i2c_flash_cnt				= 0;
-
-					//数码管跑马灯
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[cnt+1]);	//write port 1 				
-					I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<cnt);				//write port 2
-					//LED跑马灯
-					I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,~(1<<cnt));	
-
-					cnt = (cnt+1) % 8;
-				}
-			}
+			
 		  if (systick_1ms_status) //1ms定时到
 		  {
-			
+				if (systick_10ms_status) //100ms定时到
+				{
+					systick_10ms_status	= 0; //重置100ms定时状态
+					
+					if (++i2c_flash_cnt		>= I2C_FLASHTIME/100)  //5*100ms=500ms
+					{
+						i2c_flash_cnt				= 0;
+
+						//LED跑马灯
+						I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,~(1<<cnt));	
+
+						cnt = (cnt+1) % 8;
+					}
+				}
 				systick_1ms_status	= 0; //重置1ms定时状态
 				flag = flag%8+1;
-				I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x00);
+				// I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x00);
 					
 				//Welcome sentence:"HELLOJMH"
 				if(flag==1)
@@ -344,13 +366,14 @@ void AuthorDisplay(void)
 				}
 		}
 		count1=0;
-		I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
-		I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0xff);
-    BootMusic();
+		// I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+		// I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0xff);
+    	// BootMusic();
 		//SysCtlDelay(ui32SysClock/3); //1s
 		while(count2<1000)
 		{
-			I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x00);
+			// I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0x00);
+			
 			if (systick_1ms_status) //1ms
 			{
 				flag=flag%8+1;
@@ -407,8 +430,8 @@ void AuthorDisplay(void)
 					count2++;
 				}
 		}
-		I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
-		I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0xff);
+		// I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0x0);			//P2写0
+		// I2C0_WriteByte(PCA9557_I2CADDR,PCA9557_OUTPUT,0xff);
 		SysCtlDelay(ui32SysClock/3); //1s
 	}
 }
@@ -426,10 +449,19 @@ void Display_date(){   //日期显示
 	date_value[6]=day/10;
 	date_value[7]=day%10;
 	for(t1=0;t1<8;t1++){
-		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[date_value[t1]]);
-		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t1);
-		Delay(1000);
+		if(upsidedown){
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[date_value[7-t1]]);
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t1);
+			Delay(1000);
+		}
+		else{
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[date_value[t1]]);
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t1);
+			Delay(1000);
+		}
+
 	}
 }
 
@@ -447,11 +479,21 @@ void Display_time(){    //时间显示
 	time_value[7]=second%10;
 	for(t2=0;t2<8;t2++)
 	{
-		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-		if(t2==2||t2==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
-		else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[time_value[t2]]);                                                 		//write port 1                                             		//write port 1
-		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t2);
-		Delay(1000);
+		if(upsidedown){
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+			if(7-t2==2||7-t2==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
+			else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[time_value[7-t2]]);                                                 		//write port 1                                             		//write port 1
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t2);
+			Delay(1000);
+		}
+		else{
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+			if(t2==2||t2==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
+			else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[time_value[t2]]);                                                 		//write port 1                                             		//write port 1
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t2);
+			Delay(1000);
+		}
+
 	}		
 }
 
@@ -468,11 +510,20 @@ void Display_alarm(){   //闹钟显示
 	alarm_value[6]=setSecond/10;
 	alarm_value[7]=setSecond%10;
 	for(t3=0;t3<8;t3++){
-		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-		if(t3==2||t3==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
-		else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[alarm_value[t3]]);                                                 		//write port 1                                             		//write port 1
-		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t3);
-		Delay(1000);
+		if(upsidedown){
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+			if(7-t3==2||7-t3==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
+			else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[alarm_value[7-t3]]);                                                 		//write port 1                                             		//write port 1
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t3);
+			Delay(1000);
+		}
+		else{
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+			if(t3==2||t3==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
+			else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[alarm_value[t3]]);                                                 		//write port 1                                             		//write port 1
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t3);
+			Delay(1000);
+		}
 	}
 }
 
@@ -496,11 +547,20 @@ void Display_countdown(){   //倒计时显示
 	countdown[6]=(countdown_value/10)-10000*countdown[0]-1000*countdown[1]-100*countdown[3]-10*countdown[4];
 	countdown[7]=countdown_value%10;
 	for(t4=0;t4<8;t4++){
-		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
-		if(t4==2||t4==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
-		else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[countdown[t4]]);                                                 		//write port 1                                             		//write port 1
-		result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t4);
-		Delay(1000);
+		if(upsidedown){
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+			if(7-t4==2||7-t4==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
+			else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[countdown[7-t4]]);                                                 		//write port 1                                             		//write port 1
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t4);
+			Delay(1000);
+		}
+		else{
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,0);	//先往port 2写0，防止拖影
+			if(t4==2||t4==5) result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,0x40);  //显示中间横杠
+			else result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT1,seg7[countdown[t4]]);                                                 		//write port 1                                             		//write port 1
+			result = I2C0_WriteByte(TCA6424_I2CADDR,TCA6424_OUTPUT_PORT2,1<<t4);
+			Delay(1000);
+		}
 	}
 }
 
@@ -509,10 +569,13 @@ void Display_countdown(){   //倒计时显示
 void Alarmring(){  //注意添加，按下按键止闹
     if((setHour==hour&&setMinute==minute&&setSecond==second)||clockFlag!=0){
 		if(clockFlag==1){
-			PWM_Init();
+			BootMusic();
 		}
         clockFlag=1;
     }
+	if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+	}
 }
 void PWM_Init(void)    //设定闹钟蜂鸣器响起
 {
@@ -559,10 +622,10 @@ void SWPressed(void)
 		key = ~I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
 		if((key&0x04)!=0x00){
 			if(functionChoice==0){//按下SW3，加月份
-				month=(month+1)%13+1;
+				month=(month+1)%13;
+				if(month==0)month++;
 				SysCtlDelay(ui32SysClock/15); //2ms
 				Display_date();
-
 			}
 			if(functionChoice==2){//暂停计时
 				countdown_start=0;
@@ -676,13 +739,12 @@ void SWPressed(void)
 	{
 		SysCtlDelay(ui32SysClock/1500); //2ms
 		key = ~I2C0_ReadByte(TCA6424_I2CADDR,TCA6424_INPUT_PORT0);
-		if((key&0x40)!=0x00){
+		if((key&0x80)!=0x00){
 			clockFlag=0;
 			if(functionChoice==2&&countdown_start==0){//按下SW8，加秒数
 				countdown_value+=1;
 				SysCtlDelay(ui32SysClock/15); //2ms
 				Display_countdown();
-
 			}
 			
 		}
@@ -696,7 +758,7 @@ void Uart_set(){   //串口通信部分
 			char *kk1="ERROR COMMANDS!\n";
 			char *k1="COMMANDS + FUNCTIONS HELP\n";
 			char *s1="INITCLOCK :initialize the clock\n";
-			char *s12="`InITALARM`:clear the alarm\n";
+			char *s12="InITALARM`:clear the alarm\n";
 			char *s2="SETDATEXXXX-XX-XX :set the date(year/month/day)\n";
 			char *s3="SETTIMEXX:XX:XX :set the clock time(hour:minute:second)\n";
 			char *s4="SETALARMXX:XX:XX :set the alarm time(hour:minute:second)\n";
@@ -705,7 +767,7 @@ void Uart_set(){   //串口通信部分
 			char *s7="GETALARM :get the current alarm time\n";
 			char *s8="RUNDATE :display date\n";
 			char *s9="RUNTIME :display time\n";
-			char *s10="RUNSTWATCHXX.XX :run XX.XXs countdown stwatch\n";
+			char *s10="RUNSTWATCH:run countdown stwatch\n";
 			char *s11="TIPS:end with '$'\n";
 		UARTStringPut(k1);
 		UARTStringPut(s1);
@@ -773,8 +835,7 @@ void Uart_set(){   //串口通信部分
 			UARTStringPut((uint8_t *)"countdown");
 			UARTStringPut((uint8_t *)uart_receive_char+10);
 			UARTStringPut((uint8_t *)"s");
-			countdown_value=(atof(uart_receive_char+10)*100);
-		*uart_receive_char='0';
+			*uart_receive_char='0';
 			countdown_start=1;
 			functionChoice=2;
 		}
@@ -789,7 +850,7 @@ void Uart_set(){   //串口通信部分
 			*send_char='0';
 			functionChoice=3;
 		}
-		else if((uart_receive_char[0]=='I'&&uart_receive_char[3]=='C'))
+		else if((uart_receive_char[0]=='I'&&uart_receive_char[4]=='C'))
 		{
 			strcpy(uart_receive_char,p);
 			setTime(uart_receive_char+7);
@@ -802,7 +863,7 @@ void Uart_set(){   //串口通信部分
 		*uart_receive_char='0';
 		functionChoice=1;
 		}//初始化时钟
-		else if(uart_receive_char[0]=='I'&&uart_receive_char[3]=='A')
+		else if(uart_receive_char[0]=='I'&&uart_receive_char[4]=='A')
 		{
 			setHour=0;
 			setMinute=0;
@@ -842,8 +903,8 @@ void Uart_set(){   //串口通信部分
 			char *s7="GETALARM :get the current alarm time\n";
 			char *s8="RUNDATE :display date\n";
 			char *s9="RUNTIME :display time\n";
-			char *s10="RUNSTWATCHXX.XX :run XX.XXs countdown stwatch\n";
-			char *s11="TIPS:end with ' '\n";
+			char *s10="RUNSTWATCH:run countdown stwatch\n";
+			char *s11="TIPS:end with '$'\n";
 		UARTStringPut(kk1);
 		UARTStringPut(k1);
 		UARTStringPut(s1);
@@ -1448,162 +1509,230 @@ void GPIOJ_Handler(void) 	//PortJ中断处理
 	intStatus = GPIOIntStatus(GPIO_PORTJ_BASE, true); //获取中断状态
 	SysCtlDelay(ui32SysClock / 150); //delay 20ms 以消抖
 	GPIOIntClear(GPIO_PORTJ_BASE, intStatus );  //清除中断请求信号
-
-	if (intStatus & GPIO_PIN_1) {	//PJ1触发中断,停止计数
+	if(intStatus & GPIO_INT_PIN_0){
+		upsidedown=(upsidedown+1)%2;
+		SysCtlDelay(ui32SysClock / 15); //delay 200ms 以消抖
+	}
+	if ((intStatus & GPIO_PIN_1)&&PJPressed==0) {	//PJ1触发中断,停止计数
 		PJPressed=1;
 		pressStart[0]=second;
 		pressStart[1]=msCounter;
-		if(PJPressed){
-			PJPressed=0;
-			pressEnd[0]=second;
-			pressEnd[1]=msCounter;
-			gapTime[0]=pressEnd[0]-pressStart[0];
-			gapTime[1]=pressEnd[1]-pressStart[1];
-			if(gapTime[1]<0)	//若msCounter溢出
-			{
-				gapTime[0]--;
-				gapTime[1]+=1000;
-			}
-			sprintf(timeChar,"StartTime%02d:%03d\n",pressStart[0],pressStart[1]);
-			UARTStringPut(timeChar);
-			sprintf(timeChar,"EndTime%02d:%03d\n",pressEnd[0],pressEnd[1]);
-			UARTStringPut(timeChar);
-			sprintf(timeChar,"GapTime%02d:%03d\n",gapTime[0],gapTime[1]);
-			UARTStringPut(timeChar);
-		}
-
 	}
 }
 void BootMusic(void)
 {
 	// 开机音乐
+	
 	int k;
+	if(clockFlag==0)return;
+	second++;
 	for(k=0;k<200*M4/M6;k++)
 	{
+		if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(M4*3));
 	}
+
 	
 	GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
 	SysCtlDelay(10*ui32SysClock/3000);
 	
 	for(k=0;k<200*M4/M6;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(M4*3));
 	}
+
 	GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
 	
 	for(k=0;k<200*M4/M6;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(M4*3));
 	}
+
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
-	
+	if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 	for(k=0;k<200*M4/M6;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(M4*3));
 	}
+
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
+  		SysCtlDelay(10*ui32SysClock/3000);
+	
+	for(k=0;k<200;k++)
+	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
+		SysCtlDelay(ui32SysClock/(M6*3));
+	}
+
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
 	
 	for(k=0;k<200;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(M6*3));
 	}
+
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
 	
 	for(k=0;k<200;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(M6*3));
 	}
+
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
 	
 	for(k=0;k<200;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(M6*3));
 	}
+
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
-	
-	for(k=0;k<200;k++)
+
+	for(k=0;k<200*M5/M6;k++)
 	{
-		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
-		SysCtlDelay(ui32SysClock/(M6*3));
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
 	}
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
+		SysCtlDelay(ui32SysClock/(M5*3));
+	}
+
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
 	
 	for(k=0;k<200*M5/M6;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(M5*3));
 	}
+
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
 	
 	for(k=0;k<200*M5/M6;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(M5*3));
 	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
-	
+
 	for(k=0;k<200*M5/M6;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(M5*3));
 	}
-		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
-  SysCtlDelay(10*ui32SysClock/3000);
-	
-	for(k=0;k<200*M5/M6;k++)
-	{
-		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
-		SysCtlDelay(ui32SysClock/(M5*3));
-	}
+
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
 	
 	for(k=0;k<200*H1/M6;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(H1*3));
 	}
+
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
 	
 	for(k=0;k<200*H1/M6;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(H1*3));
 	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
-	
+
 	for(k=0;k<200*H1/M6;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(H1*3));
 	}
+
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
 	
 	for(k=0;k<200*H1/M6;k++)
 	{
+			if(clockFlag==0){
+		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0x0);
+		return;
+	}
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,~GPIOPinRead(GPIO_PORTK_BASE,GPIO_PIN_5));
 		SysCtlDelay(ui32SysClock/(H1*3));
 	}
+
 		GPIOPinWrite(GPIO_PORTK_BASE,GPIO_PIN_5,0);
   SysCtlDelay(10*ui32SysClock/3000);
 }
